@@ -3,14 +3,17 @@ Simulink-MATLAB-bladeRF
 
 The Simulink-MATLAB-bladeRF project adds Simulink and MATLAB support to the [bladeRF](https://nuand.com/bladeRF). bladeRF is a Software Defined Radio (SDR) platform designed to enable a community of hobbyists, and professionals to explore and experiment with the multidisciplinary facets of RF communication. By providing source code, thorough documentation, easy to grasp tutorials, and a place for open discussion modern radio systems will be demystified by covering everything from the RF, analog, and digital hardware design to the firmware running on the ARM MCU and FPGA to Linux kernel device drivers.
 
+Compiled Windows Binaries Installer
+-----------------------------------
+
+[A Windows installer](https://nuand.com/downloads/bladerf_win_installer.exe) for drivers and libbladeRF with MATLAB and Simulink support can be downloaded directly from the Nuand web server. The installer installs bladeRF support for MATLAB versions R2012A through R2014A.
+
 Requirements
 ------------
 
 - MATLAB/Simulink (R2012a or newer) and *MEX* compatible [compiler](http://www.mathworks.de/support/compilers)
 
 - *bladeRF* library from the [bladeRF](https://github.com/Nuand/bladeRF "bladeRF project page")
-
-- Compiled binaries coming soon
 
 Build/Install instructions for Linux
 ------------------------------------
