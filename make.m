@@ -62,9 +62,6 @@ elseif isunix
     options = { ...
         ['-l' 'bladeRF']
     };
-    options_pthread = { ...
-        ['-l' 'pthread'] ...
-    };
 else
     error('Platform not supported')
 end
