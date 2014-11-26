@@ -55,7 +55,7 @@ struct bladerf *_devices [NUM_SUPPORT];
 #define MODE_TX     2
 int _device_modes      [NUM_SUPPORT];
 int _sample_rates      [NUM_SUPPORT];
-int _frequencies       [NUM_SUPPORT];
+uint32_t _frequencies  [NUM_SUPPORT];
 int _bandwidths        [NUM_SUPPORT];
 int _lnagains          [NUM_SUPPORT];
 int _rxvga1s           [NUM_SUPPORT];
@@ -240,7 +240,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         }
 
         /* set tuning frequency */
-        int frequency = (int)mxGetScalar(FREQUENCY);
+        uint32_t frequency = (uint32_t)mxGetScalar(FREQUENCY);
         if (frequency != _frequencies[device_index]) {
 
             ret = bladerf_set_frequency(_device, mod, (uint32_t)frequency);
