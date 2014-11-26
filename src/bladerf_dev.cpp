@@ -299,7 +299,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
             }
         } else if (!rx && mxGetN(GAIN) == 2) {
             /* set TXVGA1 */
-            int txvga1 = (int)gains[1];
+            int txvga1 = (int)gains[0];
             if (txvga1 != _txvga1s[device_index]) {
                 _txvga1s[device_index] = txvga1;
                 ret = bladerf_set_txvga1(_device, txvga1);
@@ -309,7 +309,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
             }
 
             /* set TXVGA2 */
-            int txvga2 = (int)gains[2];
+            int txvga2 = (int)gains[1];
             if (txvga2 != _txvga1s[device_index]) {
                 _txvga2s[device_index] = txvga1;
                 ret = bladerf_set_txvga2(_device, txvga2);
