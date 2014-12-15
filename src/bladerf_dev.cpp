@@ -185,11 +185,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         CHECK_BANDWIDTH   (BANDWIDTH   );
         CHECK_SAMPLE_RATE (SAMPLE_RATE );
         CHECK_FREQUENCY   (FREQUENCY   );
-        CHECK_BUF_LENGTH  (BUF_LENGTH  );
 
         rx = 1;
         if (mxGetString(DEVICE_MODE, (char *)&mode, 3)) {
             rx = 1;
+            CHECK_BUF_LENGTH  (BUF_LENGTH  );
         } else {
             if (!strcmp(mode, "TX"))
                 rx = 0;
