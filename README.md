@@ -6,7 +6,7 @@ The Simulink-MATLAB-bladeRF project adds Simulink and MATLAB support to the [bla
 Compiled Windows Binaries Installer
 -----------------------------------
 
-[A Windows installer](https://nuand.com/downloads/bladerf_win_installer.exe) for drivers and libbladeRF with MATLAB and Simulink support can be downloaded directly from the Nuand web server. The installer installs bladeRF support for MATLAB versions R2012A through R2014A.
+[A Windows installer](https://nuand.com/downloads/bladerf_win_installer.exe) for drivers and libbladeRF with MATLAB and Simulink support can be downloaded directly from the Nuand web server. The installer installs bladeRF support for MATLAB versions R2012A through R2014B.
 
 Requirements
 ------------
@@ -49,7 +49,7 @@ Build/Install instructions for Microsoft Windows
 
 2. Plug in your device, abort the automated search for drivers.
 
-3. Download and install the Windows binaries from [Nuand's side](https://nuand.com/downloads/bladerf_win_installer.exe). This will install the necessary drivers, utilities and libraries needed to build and run Simulink bladeRF.
+3. Download and install the Windows binaries from [Nuand's site](https://nuand.com/downloads/bladerf_win_installer.exe). This will install the necessary drivers, utilities and libraries needed to build and run Simulink bladeRF.
 
 4. Test the *bladeRF* library with the included test application
 
