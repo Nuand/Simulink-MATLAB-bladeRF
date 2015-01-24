@@ -142,7 +142,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         else {
 
             /* open bladeRF device */
-            sprintf(buf, "libusb:instance=%d", device_index);
+            sprintf(buf, "*:instance=%d", device_index);
             ret = bladerf_open(&_devices[device_index], buf);
             if (ret < 0) {
                 sprintf(errmsg," Failed to use bladeRF device #%d.\n",device_index); mexErrMsgTxt(errmsg);

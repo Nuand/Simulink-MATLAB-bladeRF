@@ -189,7 +189,7 @@ static void mdlStart(SimStruct *S)
     /* give handle to PWork vector */
     ssSetPWorkValue(S, DEVICE, NULL);
 
-    sprintf(instance, "libusb:instance=%d", device_index);
+    sprintf(instance, "*:instance=%d", device_index);
     /* open bladeRF device */
     ret = bladerf_open(&dev, instance);
     if (ret < 0) {
