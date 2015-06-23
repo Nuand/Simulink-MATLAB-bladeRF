@@ -261,11 +261,15 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 
     /* get bladeRF object back from PWork vector */
     struct bladerf *dev = (struct bladerf *)ssGetPWorkValue(S, DEVICE);
-    uint16_t *ptr;
+    //uint16_t *ptr;
+    int16_t *ptr;
     /* output buffer */
-    double* out = (double*)ssGetInputPortSignalPtrs(S, 0);
+    InputRealPtrsType inPtr = ssGetInputPortRealSignalPtrs(S, 0);
 
-    ptr = (uint16_t *)malloc(frame_length * 2 * sizeof(uint16_t));
+    //ptr = (uint16_t *)malloc(frame_length * 2 * sizeof(uint16_t));
+    ptr = (int16_t *)malloc(frame_length * 2 * sizeof(int16_t));
+    for (int k = 0; k < frame_length*2; ++k)
+        ptr[k] = (int16_t)(*inPtr[k] * 2048.0f);
     ret = bladerf_sync_tx(dev, ptr, frame_length, NULL, 500);
 //    if (ret < 0)
 //      ssSetErrorStatusf(S,"Failed to TX with error code %d\n", ret);

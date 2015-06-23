@@ -272,12 +272,13 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 
     /* get bladeRF object back from PWork vector */
     struct bladerf *dev = (struct bladerf *)ssGetPWorkValue(S, DEVICE);
-    uint16_t *ptr;
+    //uint16_t *ptr;
+    int16_t *ptr;
     /* output buffer */
     double* out = (double*)ssGetOutputPortSignal(S, 0);
 
-    ptr = (uint16_t *)malloc(frame_length * 2 * sizeof(uint16_t));
-
+    //ptr = (uint16_t *)malloc(frame_length * 2 * sizeof(uint16_t));
+    ptr = (int16_t *)malloc(frame_length * 2 * sizeof(int16_t));
 
     ret = bladerf_sync_rx(dev, ptr, frame_length, NULL, 3500);
     //if (ret < 0)
