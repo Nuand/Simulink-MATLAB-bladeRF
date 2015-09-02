@@ -38,13 +38,16 @@ classdef bladeRF < handle
                 warnings
             end
             % Populate version information
-            % TODO: Not sure why MATLAB doesn't like getting version
-            % information
-            %ver = libstruct('bladerf_version') ;
-            %ver = calllib('libbladeRF', 'bladerf_version', ver) ;
-            obj.versions.lib.major = 0 ;
-            obj.versions.lib.minor = 0 ;
-            obj.versions.lib.patch = 0 ;
+            ver = libstruct('bladerf_version');
+            ver.major = 0;
+            ver.minor = 0;
+            ver.patch = 0;
+            ver.describe = 'Unknown';
+
+            ver_ptr = libpointer('bladerf_version', ver);
+
+            calllib('libbladeRF', 'bladerf_version', ver_ptr) ;
+            obj.versions.lib = ver_ptr.value;
 
             obj.versions.matlab.major = 1 ;
             obj.versions.matlab.minor = 0 ;
