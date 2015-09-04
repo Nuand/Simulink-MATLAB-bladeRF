@@ -35,9 +35,9 @@ classdef XCVR
             obj.bladerf.set_status(rv) ;
             obj.bladerf.check('bladerf_set_rational_sample_rate') ;
             % x = sprintf( 'Requested: %d + %d/%d    Actual: %d + %d/%d\n', rate.integer, rate.num, rate.den, actual.integer, actual.num, actual.den ) ;
-            % disp( x ) ;
+            % %disp( x ) ;
             obj.samplerate = actual.integer + actual.num / actual.den ;
-            disp('Changed samplerate')
+            %disp('Changed samplerate')
         end
         
         function val = get.samplerate(obj)
@@ -54,7 +54,7 @@ classdef XCVR
             % Set it locally
             obj.samplerate = rate.integer + rate.num / rate.den ;
             val = obj.samplerate ;
-            disp('Got samplerate') ;
+            %disp('Got samplerate') ;
         end
         
         % Frequency
@@ -63,7 +63,7 @@ classdef XCVR
             obj.bladerf.set_status(rv) ;
             obj.bladerf.check('bladerf_set_frequency') ;
             obj.frequency = val ;
-            disp('Changed frequency') ;
+            %disp('Changed frequency') ;
         end
         
         function val = get.frequency(obj)
@@ -73,7 +73,7 @@ classdef XCVR
             obj.bladerf.check('bladerf_get_frequency') ;
             obj.frequency = freq ;
             val = obj.frequency ;
-            disp('Got frequency') ;
+            %disp('Got frequency') ;
         end
         
         % Bandwidth
@@ -83,7 +83,7 @@ classdef XCVR
             obj.bladerf.set_status(rv) ;
             obj.bladerf.check('bladerf_set_bandwidth') ;
             obj.bandwidth = actual ;
-            disp('Changed bandwidth') ;
+            %disp('Changed bandwidth') ;
         end
         
         function val = get.bandwidth(obj)
@@ -93,7 +93,7 @@ classdef XCVR
             obj.bladerf.check('bladerf_get_bandwidth') ;
             obj.bandwidth = bw ;
             val = obj.bandwidth ;
-            disp('Got bandwidth') ;
+            %disp('Got bandwidth') ;
         end
         
         % VGA1
@@ -106,7 +106,7 @@ classdef XCVR
             obj.bladerf.set_status(rv) ;
             obj.bladerf.check('bladerf_set_vga1') ;
             obj.vga1 = val ;
-            disp('Changed VGA1') ;
+            %disp('Changed VGA1') ;
         end
         
         function val = get.vga1(obj)
@@ -120,7 +120,7 @@ classdef XCVR
             obj.bladerf.check('bladerf_get_vga1') ;
             obj.vga1 = gain ;
             val = obj.vga1 ;
-            disp('Got VGA1') ;
+            %disp('Got VGA1') ;
         end
         
         % VGA2
@@ -133,7 +133,7 @@ classdef XCVR
             obj.bladerf.set_status(rv) ;
             obj.bladerf.check('bladerf_set_vga2') ;
             obj.vga2 = val ;
-            disp('Changed VGA2') ;
+            %disp('Changed VGA2') ;
         end
         
         function val = get.vga2(obj)
@@ -145,9 +145,9 @@ classdef XCVR
             end
             obj.bladerf.set_status(rv) ;
             obj.bladerf.check('bladerf_get_vga2') ;
-            obj.vga1 = gain ;
+            obj.vga2 = gain ;
             val = obj.vga2 ;
-            disp('Got VGA2') ;
+            %disp('Got VGA2') ;
         end
         
         % LNA
@@ -174,7 +174,7 @@ classdef XCVR
             obj.bladerf.set_status(rv) ;
             obj.bladerf.check('bladerf_set_lna_gain') ;
             obj.lna = val ;
-            disp('Changed LNA') ;
+            %disp('Changed LNA') ;
         end
         
         function val = get.lna(obj)
@@ -197,7 +197,7 @@ classdef XCVR
                 obj.lna = 'UNKNOWN' ;
             end
             val = obj.lna ;
-            disp( 'Got LNA') ;
+            %disp( 'Got LNA') ;
         end
         
         %% Constructor
@@ -232,7 +232,7 @@ classdef XCVR
         
         %% Usage
         function start(obj)
-            disp(strcat('Start ', obj.direction))
+            %disp(strcat('Start ', obj.direction))
             % Lock down the config
             obj.config.lock() ;
             
@@ -313,7 +313,7 @@ classdef XCVR
         end
         
         function stop(obj)
-            disp(strcat('Stop ', obj.direction)) ;
+            %disp(strcat('Stop ', obj.direction)) ;
             % Disable the module
             [rv, ~] = calllib('libbladeRF', 'bladerf_enable_module', ...
                 obj.bladerf.device, ...
