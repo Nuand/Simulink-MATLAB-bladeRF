@@ -5,17 +5,17 @@ classdef IQCorrections
     
     properties
         dc
+        gain
         phase
-        magnitude
     end
     
     methods
         % Constructor
-        function obj = IQCorrections(dev, dc, phase, mag)
+        function obj = IQCorrections(dev, dc, phase, gain)
             obj.bladerf = dev ;
             obj.dc = dc ;
             obj.phase = phase ;
-            obj.magnitude = mag ;
+            obj.gain = gain ;
         end
         
         % Property Setters/getters
@@ -35,12 +35,12 @@ classdef IQCorrections
             val = obj.phase ;
         end
         
-        function obj = set.magnitude(obj, val)
-            obj.magnitude = val ;
+        function obj = set.gain(obj, val)
+            obj.gain = val ;
         end
         
-        function val = get.magnitude(obj)
-            val = obj.magnitude ;
+        function val = get.gain(obj)
+            val = obj.gain ;
         end
     end
 end
