@@ -233,10 +233,97 @@ classdef XCVR
         %% Usage
         function start(obj)
             disp(strcat('Start ', obj.direction))
+            % Lock down the config
+            obj.config.lock() ;
+            
+            % Configure the sync config
+            [rv, ~] = calllib('libbladeRF', 'bladerf_sync_config', ...
+                obj.bladerf.device, ...
+                obj.module, ...
+                'BLADERF_FORMAT_SC16_Q11', ...
+                obj.config.num_buffers, ...
+                obj.config.buffer_size, ...
+                obj.config.num_transfers, ...
+                obj.config.timeout_ms ) ;
+            obj.bladerf.set_status(rv) ;
+            obj.bladerf.check('bladerf_sync_config') ;
+            
+            % Enable the module
+            [rv, ~] = calllib('libbladeRF', 'bladerf_enable_module', ...
+                obj.bladerf.device, ...
+                obj.module, ...
+                true ) ;
+            obj.bladerf.set_status(rv) ;
+            obj.bladerf.check('bladerf_enable_module') ;
+        end
+        
+        function samples = receive(obj, num_samples, timeout_ms)
+            if strcmp( obj.direction, 'RX' ) == true
+                if isempty(timeout_ms) == true
+                    timeout_ms = 5000 ;
+                end
+                s16 = int16(zeros(1, 2*num_samples)) ;
+                metad = libstruct('bladerf_metadata') ;
+                metad.actual_count = 0 ;
+                metad.flags = bitshift(1,31) ;
+                metad.reserved = 0 ;
+                metad.status = 0 ;
+                metad.timestamp = 0 ;
+                pmetad = libpointer('bladerf_metadata', metad) ;
+                [rv, ~, s16, ~] = calllib('libbladeRF', 'bladerf_sync_rx', ...
+                    obj.bladerf.device, ...
+                    s16, ...
+                    num_samples, ...
+                    pmetad, ...
+                    timeout_ms ) ;
+                obj.bladerf.set_status(rv) ;
+                obj.bladerf.check('bladerf_sync_rx') ;
+                samples = double(s16(1:2:end)) + double(s16(2:2:end))*1j ;
+            else
+                error('Cannot receive on TX transceiver') ;
+            end
+        end
+        
+        function transmit(obj, samples, timeout_ms)
+            if strcmp(obj.direction, 'TX') == true
+                if isempty(timeout_ms) == true
+                    timeout_ms = 5000 ;
+                end
+                metad = libstruct('bladerf_metadata') ;
+                metad.actual_count = 0 ;
+                metad.flags = bitshift(1,0) | bitshift(1,1) | bitshift(1,2) ;
+                metad.reserved = 0 ;
+                metad.status = 0 ;
+                metad.timestamp = 0 ;
+                pmetad = libpointer('bladerf_metadata', metad) ;
+                s16 = zeros(1, 2*length(samples)) ;
+                s16(1:2:end) = samples(1:2:end) ;
+                s16(2:2:end) = samples(2:2:end) ;
+                rv = calllib('libbladeRF', 'bladerf_sync_tx', ...
+                    obj.bladerf.device, ...
+                    s16, ...
+                    length(samples), ...
+                    pmetad, ...
+                    timeout_ms ) ;
+                obj.bladerf.set_status(rv) ;
+                obj.bladerf.check('bladerf_sync_tx') ;
+            else
+                error('Cannot transmit on RX transceiver') ;
+            end
         end
         
         function stop(obj)
-            disp(strcat('Stop ', obj.direction))
+            disp(strcat('Stop ', obj.direction)) ;
+            % Disable the module
+            [rv, ~] = calllib('libbladeRF', 'bladerf_enable_module', ...
+                obj.bladerf.device, ...
+                obj.module, ...
+                false ) ;
+            obj.bladerf.set_status(rv) ;
+            obj.bladerf.check('bladerf_enable_module') ;
+            
+            % Unlock the configuration for changing
+            obj.config.unlock() ;
         end
         
     end

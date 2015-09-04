@@ -32,10 +32,15 @@ classdef bladeRF < handle
         % Constructor
         function obj = bladeRF(devstring)
             % Load the library
-            if libisloaded('/usr/local/lib/libbladeRF.so') == false
-                [notfound, warnings] = loadlibrary('/usr/local/lib/libbladeRF.so', '/usr/local/include/libbladeRF.h') ;
-                notfound
-                warnings
+            if libisloaded('libbladeRF') == false
+                [notfound, warnings] = loadlibrary('/usr/local/lib/libbladeRF.so', '/usr/local/include/libbladeRF.h', 'notempdir') ;
+                if isempty(notfound) == false
+                    error('bladeRF:loadlibrary', 'functions missing from library' ) ;
+                end
+                
+                if isempty(warnings) == false
+                    warning('bladeRF:loadlibrary', 'loadlibrary returned warning messages \n%s\n', warnings) ;
+                end
             end
             % Populate version information
             ver = libstruct('bladerf_version');
@@ -81,18 +86,12 @@ classdef bladeRF < handle
             % device.send(x) ;
         end
         
-        % TX samples at a specific time
-        % TODO: Implement this
-        
         % RX samples immediately
         function ret = receive(obj, n)
             % Receive something
             disp('Receiving something') ;
             % ret = device.receive(x) ;
         end
-        
-        % RX samples at a specific time
-        % TODO: Implement this
         
         % Low level peek function
         function val = peek(obj, dev, addr)
