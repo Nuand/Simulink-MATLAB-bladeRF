@@ -33,7 +33,18 @@ classdef bladeRF < handle
         function obj = bladeRF(devstring)
             % Load the library
             if libisloaded('libbladeRF') == false
-                [notfound, warnings] = loadlibrary('/usr/local/lib/libbladeRF.so', '/usr/local/include/libbladeRF.h', 'notempdir') ;
+                arch = computer('arch') ;
+                switch arch
+                    case 'win32'
+                        error( 'bladeRF:constructor', 'win32 not supported' ) ;
+                    case 'win64'
+                        error ('bladeRF:constructor', 'win64 not supported' ) ;
+                    case 'glnx64'
+                        [notfound, warnings] = loadlibrary('/usr/local/lib/libbladeRF.so', '/usr/local/include/libbladeRF.h', 'notempdir') ;
+                    case 'maci64'
+                        [notfound, warnings] = loadlibrary('/usr/local/lib/libbladeRF.dylib', '/usr/local/include/libbladeRF.h', 'notempdir') ;
+                    otherwise
+                end
                 if isempty(notfound) == false
                     error('bladeRF:loadlibrary', 'functions missing from library' ) ;
                 end
