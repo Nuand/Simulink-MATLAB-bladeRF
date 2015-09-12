@@ -18,12 +18,6 @@ function varargout = bladeRF_fft(varargin)
 end
 
 function bladeRF_fft_OpeningFcn(hObject, eventdata, handles, varargin)
-    % This function has no output args, see OutputFcn.
-    % hObject    handle to figure
-    % eventdata  reserved - to be defined in a future version of MATLAB
-    % handles    structure with handles and user data (see GUIDATA)
-    % varargin   command line arguments to bladeRF_fft (see VARARGIN)
-
     % Choose default command line output for bladeRF_fft
     handles.output = hObject;
 
@@ -54,13 +48,11 @@ function bladeRF_fft_OpeningFcn(hObject, eventdata, handles, varargin)
     guidata(hObject, handles);
 end
 
-% --- Outputs from this function are returned to the command line.
 function varargout = bladeRF_fft_OutputFcn(hObject, eventdata, handles) 
     varargout{1} = handles.output;
 end
 
-% --- Executes on selection change in popupmenu1.
-function popupmenu1_Callback(hObject, eventdata, handles)
+function displaytype_Callback(hObject, eventdata, handles)
     items = get(hObject,'String') ;
     index = get(hObject,'Value') ;
     switch items{index}
@@ -84,23 +76,15 @@ function popupmenu1_Callback(hObject, eventdata, handles)
     end
 end
 
-function popupmenu1_CreateFcn(hObject, eventdata, handles)
+function displaytype_CreateFcn(hObject, eventdata, handles)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         set(hObject,'BackgroundColor','white');
     end
 end
 
-function popupmenu1_KeyPressFcn(hObject, eventdata, handles)
-
-end
-
-function popupmenu1_ButtonDownFcn(hObject, eventdata, handles)
-
-end
-
 function plot_data(handles, f, s, x)
-    items = get(handles.popupmenu1,'String') ;
-    index = get(handles.popupmenu1,'Value') ;
+    items = get(handles.displaytype,'String') ;
+    index = get(handles.displaytype,'Value') ;
     selected = items{index} ;
     axes(handles.axes1) ;
     switch selected
@@ -130,19 +114,20 @@ function actionbutton_Callback(hObject, eventdata, handles)
     switch get(hObject,'String')
         case 'Start'
             set(hObject,'String','Stop') ;
-            handles.bladerf.rx.samplerate = 40.0e6 ;
             handles.running = true ;
             f = double(handles.bladerf.rx.frequency) ;
             s = double(handles.bladerf.rx.samplerate) ;
             handles.bladerf.rx.start
             guidata(hObject, handles);
             % Why can't I check handles.running here?
+            % while handles.running == true
             while strcmp(get(hObject,'String'), 'Stop') == true
                 f = get(handles.frequency,'Value') ;
                 s = get(handles.samplerate,'Value') ;
-                x = handles.bladerf.rx.receive(4096, 5000) ;
+                x = handles.bladerf.rx.receive(4096, 5000, 0) ;
                 plot_data(handles, f, s, x) ;
                 drawnow ;
+                guidata(hObject, handles) ;
             end
             handles.bladerf.rx.stop
             
@@ -207,14 +192,14 @@ function figure1_DeleteFcn(hObject, eventdata, handles)
 
 end
 
-function popupmenu3_Callback(hObject, eventdata, handles)
+function bandwidth_Callback(hObject, eventdata, handles)
     values = get(hObject,'String') ;
     index = get(hObject,'Value') ;
     selected = str2double(values{index}) ;
     handles.bladerf.rx.bandwidth = selected * 1.0e6 ;
 end
 
-function popupmenu3_CreateFcn(hObject, eventdata, handles)
+function bandwidth_CreateFcn(hObject, eventdata, handles)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         set(hObject,'BackgroundColor','white');
     end
@@ -224,7 +209,6 @@ function corr_dc_Callback(hObject, eventdata, handles)
 
 end
 
-% --- Executes during object creation, after setting all properties.
 function corr_dc_CreateFcn(hObject, eventdata, handles)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         set(hObject,'BackgroundColor','white');
@@ -246,12 +230,6 @@ function corr_phase_Callback(hObject, eventdata, handles)
 end
 
 function corr_phase_CreateFcn(hObject, eventdata, handles)
-    % hObject    handle to corr_phase (see GCBO)
-    % eventdata  reserved - to be defined in a future version of MATLAB
-    % handles    empty - handles not created until after all CreateFcns called
-
-    % Hint: edit controls usually have a white background on Windows.
-    %       See ISPC and COMPUTER.
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         set(hObject,'BackgroundColor','white');
     end
@@ -288,4 +266,35 @@ function frequency_CreateFcn(hObject, eventdata, handles)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         set(hObject,'BackgroundColor','white');
     end
+end
+
+function devicelist_Callback(hObject, eventdata, handles)
+    items = get(hObject,'String') ;
+    index = get(hObject,'Value') ;
+    devstring = items{index} ;
+    handles.bladerf.delete ;
+    guidata(hObject, handles) ;
+    handles.bladerf = bladeRF(devstring) ;
+    guidata(hObject, handles);
+end
+
+function devicelist_CreateFcn(hObject, eventdata, handles)
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
+    devs = bladeRF.devices ;
+    list = {} ;
+    for idx=1:length(devs)
+        switch devs(idx).backend
+            case 'BLADERF_BACKEND_LIBUSB'
+                backend = 'libusb' ;
+            case 'BLADERF_BACKEND_CYPRESS'
+                backend = 'cypress' ;
+            otherwise
+                disp('Not sure which backend is being used') ;
+                backend = '*' ;
+        end
+        list{idx} = strcat(backend, ':serial=', devs(idx).serial) ;
+    end
+    set(hObject, 'String', list) ;
 end

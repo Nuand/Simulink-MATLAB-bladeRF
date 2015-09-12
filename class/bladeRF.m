@@ -28,9 +28,8 @@ classdef bladeRF < handle
         end
     end
     
-    methods
-        % Constructor
-        function obj = bladeRF(devstring)
+    methods(Static, Access = private)
+        function load_library
             % Load the library
             if libisloaded('libbladeRF') == false
                 arch = computer('arch') ;
@@ -39,11 +38,12 @@ classdef bladeRF < handle
                         error( 'bladeRF:constructor', 'win32 not supported' ) ;
                     case 'win64'
                         error ('bladeRF:constructor', 'win64 not supported' ) ;
-                    case 'glnx64'
-                        [notfound, warnings] = loadlibrary('/usr/local/lib/libbladeRF.so', '/usr/local/include/libbladeRF.h', 'notempdir') ;
+                    case 'glnxa64'
+                        [notfound, warnings] = loadlibrary('libbladeRF', @libbladeRF_proto, 'notempdir') ;
                     case 'maci64'
-                        [notfound, warnings] = loadlibrary('/usr/local/lib/libbladeRF.dylib', '/usr/local/include/libbladeRF.h', 'notempdir') ;
+                        [notfound, warnings] = loadlibrary('libbladeRF.dylib', @libbladeRF_proto, 'notempdir') ;
                     otherwise
+                        disp('What the fuck') ;
                 end
                 if isempty(notfound) == false
                     error('bladeRF:loadlibrary', 'functions missing from library' ) ;
@@ -53,6 +53,37 @@ classdef bladeRF < handle
                     warning('bladeRF:loadlibrary', 'loadlibrary returned warning messages \n%s\n', warnings) ;
                 end
             end
+        end
+    end
+    
+    methods(Static)
+        function devs = devices
+            bladeRF.load_library() ;
+            pdevlist = libpointer('bladerf_devinfoPtr') ;
+            [rv, ~] = calllib('libbladeRF', 'bladerf_get_device_list', pdevlist) ;
+            if rv < 0
+                error('bladeRF:devices', strcat('Error retrieving devices: ', calllib('libbladeRF', 'bladerf_strerror', rv))) ;
+            end
+            fprintf('Devices got: %d', rv) ;
+            if rv > 0
+                for x=0:rv-1
+                    ptr = pdevlist+x ;
+                    ptr.Value
+                    devs(x+1) = ptr.Value ;
+                    devs(x+1).serial = char(devs(x+1).serial(1:end-1)) ;
+                end
+            else
+                devs = [] ;
+            end
+            calllib('libbladeRF', 'bladerf_free_device_list', pdevlist) ;
+        end
+    end
+    
+    methods
+        % Constructor
+        function obj = bladeRF(devstring)
+            bladeRF.load_library() ;
+            
             % Populate version information
             ver = libstruct('bladerf_version');
             ver.major = 0;

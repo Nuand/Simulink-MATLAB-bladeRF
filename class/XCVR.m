@@ -14,6 +14,7 @@ classdef XCVR
         vga1            % VGA1
         vga2            % VGA2
         lna             % LNA
+        timestamp       % Placeholder
         corrections     % IQ corrections
     end
 
@@ -200,6 +201,19 @@ classdef XCVR
             %disp( 'Got LNA') ;
         end
         
+        % Timestamp
+        function obj = set.timestamp(obj, ~)
+            warning( 'bladeRF:XCVR:timestamp', 'Cannot set the timestamp' ) ;
+        end
+        
+        function val = get.timestamp(obj)
+            t = uint64(0) ;
+            [rv, ~, t] = calllib('libbladeRF', 'bladerf_get_timestamp', obj.bladerf.device, obj.module, t) ;
+            obj.bladerf.set_status(rv) ;
+            obj.bladerf.check('bladerf_get_timestamp') ;
+            val = t ;
+        end
+        
         %% Constructor
         function obj = XCVR(dev, dir)
             if strcmp(dir,'RX') == false && strcmp(dir,'TX') == false
@@ -240,7 +254,7 @@ classdef XCVR
             [rv, ~] = calllib('libbladeRF', 'bladerf_sync_config', ...
                 obj.bladerf.device, ...
                 obj.module, ...
-                'BLADERF_FORMAT_SC16_Q11', ...
+                'BLADERF_FORMAT_SC16_Q11_META', ...
                 obj.config.num_buffers, ...
                 obj.config.buffer_size, ...
                 obj.config.num_transfers, ...
@@ -257,7 +271,7 @@ classdef XCVR
             obj.bladerf.check('bladerf_enable_module') ;
         end
         
-        function samples = receive(obj, num_samples, timeout_ms)
+        function samples = receive(obj, num_samples, timeout_ms, time)
             if strcmp( obj.direction, 'RX' ) == true
                 if isempty(timeout_ms) == true
                     timeout_ms = 5000 ;
@@ -268,7 +282,7 @@ classdef XCVR
                 metad.flags = bitshift(1,31) ;
                 metad.reserved = 0 ;
                 metad.status = 0 ;
-                metad.timestamp = 0 ;
+                metad.timestamp = time ;
                 pmetad = libpointer('bladerf_metadata', metad) ;
                 [rv, ~, s16, ~] = calllib('libbladeRF', 'bladerf_sync_rx', ...
                     obj.bladerf.device, ...
