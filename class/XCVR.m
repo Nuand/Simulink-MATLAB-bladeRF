@@ -1,11 +1,11 @@
 classdef XCVR
-    
+
     properties(SetAccess = immutable)
         bladerf
         module
         direction
     end
-    
+
     properties
         config          % Stream configuration
         samplerate      % Samplerate must be between 160kHz and 40MHz
@@ -20,7 +20,7 @@ classdef XCVR
 
     methods
         %% Property handling
-        
+
         % Samplerate
         function obj = set.samplerate(obj, val)
             % Create the holding structures
@@ -40,24 +40,24 @@ classdef XCVR
             obj.samplerate = actual.integer + actual.num / actual.den ;
             %disp('Changed samplerate')
         end
-        
+
         function val = get.samplerate(obj)
             rate = libstruct('bladerf_rational_rate') ;
             rate.integer = 0 ;
             rate.num = 0 ;
             rate.den = 1 ;
-            
+
             % Get the sample rate from the hardware
             [rv, ~, rate] = calllib('libbladeRF', 'bladerf_get_rational_sample_rate', obj.bladerf.device, obj.module, rate) ;
             obj.bladerf.set_status(rv) ;
             obj.bladerf.check('bladerf_get_rational_sample_rate') ;
-            
+
             % Set it locally
             obj.samplerate = rate.integer + rate.num / rate.den ;
             val = obj.samplerate ;
             %disp('Got samplerate') ;
         end
-        
+
         % Frequency
         function obj = set.frequency(obj, val)
             [rv, ~] = calllib('libbladeRF', 'bladerf_set_frequency', obj.bladerf.device, obj.module, val) ;
@@ -66,7 +66,7 @@ classdef XCVR
             obj.frequency = val ;
             %disp('Changed frequency') ;
         end
-        
+
         function val = get.frequency(obj)
             freq = uint32(0) ;
             [rv, ~, freq] = calllib('libbladeRF', 'bladerf_get_frequency', obj.bladerf.device, obj.module, freq) ;
@@ -76,7 +76,7 @@ classdef XCVR
             val = obj.frequency ;
             %disp('Got frequency') ;
         end
-        
+
         % Bandwidth
         function obj = set.bandwidth(obj, val)
             actual = uint32(0) ;
@@ -86,7 +86,7 @@ classdef XCVR
             obj.bandwidth = actual ;
             %disp('Changed bandwidth') ;
         end
-        
+
         function val = get.bandwidth(obj)
             bw = uint32(0) ;
             [rv, ~, bw] = calllib('libbladeRF', 'bladerf_get_bandwidth', obj.bladerf.device, obj.module, bw) ;
@@ -96,7 +96,7 @@ classdef XCVR
             val = obj.bandwidth ;
             %disp('Got bandwidth') ;
         end
-        
+
         % VGA1
         function obj = set.vga1(obj, val)
             if strcmp(obj.direction,'RX') == true
@@ -109,7 +109,7 @@ classdef XCVR
             obj.vga1 = val ;
             %disp('Changed VGA1') ;
         end
-        
+
         function val = get.vga1(obj)
             gain = int32(0) ;
             if strcmp(obj.direction,'RX') == true
@@ -123,7 +123,7 @@ classdef XCVR
             val = obj.vga1 ;
             %disp('Got VGA1') ;
         end
-        
+
         % VGA2
         function obj = set.vga2(obj, val)
             if strcmp(obj.direction,'RX') == true
@@ -136,7 +136,7 @@ classdef XCVR
             obj.vga2 = val ;
             %disp('Changed VGA2') ;
         end
-        
+
         function val = get.vga2(obj)
             gain = int32(0) ;
             if strcmp(obj.direction,'RX') == true
@@ -150,7 +150,7 @@ classdef XCVR
             val = obj.vga2 ;
             %disp('Got VGA2') ;
         end
-        
+
         % LNA
         function obj = set.lna(obj, val)
             if strcmp(obj.direction,'TX') == true
@@ -170,14 +170,14 @@ classdef XCVR
                 msg = 'Valid LNA values are [BYPASS, MID, MAX]' ;
                 throw(MException(msgID, msg)) ;
             end
-            
+
             [rv, ~] = calllib('libbladeRF', 'bladerf_set_lna_gain', obj.bladerf.device, lna) ;
             obj.bladerf.set_status(rv) ;
             obj.bladerf.check('bladerf_set_lna_gain') ;
             obj.lna = val ;
             %disp('Changed LNA') ;
         end
-        
+
         function val = get.lna(obj)
             if strcmp(obj.direction,'TX') == true
                 msgID = 'XCVR:lna' ;
@@ -200,12 +200,12 @@ classdef XCVR
             val = obj.lna ;
             %disp( 'Got LNA') ;
         end
-        
+
         % Timestamp
         function obj = set.timestamp(obj, ~)
             warning( 'bladeRF:XCVR:timestamp', 'Cannot set the timestamp' ) ;
         end
-        
+
         function val = get.timestamp(obj)
             t = uint64(0) ;
             [rv, ~, t] = calllib('libbladeRF', 'bladerf_get_timestamp', obj.bladerf.device, obj.module, t) ;
@@ -213,7 +213,7 @@ classdef XCVR
             obj.bladerf.check('bladerf_get_timestamp') ;
             val = t ;
         end
-        
+
         %% Constructor
         function obj = XCVR(dev, dir)
             if strcmp(dir,'RX') == false && strcmp(dir,'TX') == false
@@ -227,7 +227,7 @@ classdef XCVR
             else
                 obj.module = 'BLADERF_MODULE_TX' ;
             end
-            
+
             % Setup defaults
             obj.config = StreamConfig ;
             obj.samplerate = 1234567.89 ;
@@ -243,13 +243,13 @@ classdef XCVR
             end
             obj.corrections = IQCorrections(dev, obj.module, 0+0j, 0, 1) ;
         end
-        
+
         %% Usage
         function start(obj)
             %disp(strcat('Start ', obj.direction))
             % Lock down the config
             obj.config.lock() ;
-            
+
             % Configure the sync config
             [rv, ~] = calllib('libbladeRF', 'bladerf_sync_config', ...
                 obj.bladerf.device, ...
@@ -261,7 +261,7 @@ classdef XCVR
                 obj.config.timeout_ms ) ;
             obj.bladerf.set_status(rv) ;
             obj.bladerf.check('bladerf_sync_config') ;
-            
+
             % Enable the module
             [rv, ~] = calllib('libbladeRF', 'bladerf_enable_module', ...
                 obj.bladerf.device, ...
@@ -270,7 +270,7 @@ classdef XCVR
             obj.bladerf.set_status(rv) ;
             obj.bladerf.check('bladerf_enable_module') ;
         end
-        
+
         function samples = receive(obj, num_samples, timeout_ms, time)
             if strcmp( obj.direction, 'RX' ) == true
                 if isempty(timeout_ms) == true
@@ -297,7 +297,7 @@ classdef XCVR
                 error('Cannot receive on TX transceiver') ;
             end
         end
-        
+
         function transmit(obj, samples, timeout_ms)
             if strcmp(obj.direction, 'TX') == true
                 if isempty(timeout_ms) == true
@@ -325,7 +325,7 @@ classdef XCVR
                 error('Cannot transmit on RX transceiver') ;
             end
         end
-        
+
         function stop(obj)
             %disp(strcat('Stop ', obj.direction)) ;
             % Disable the module
@@ -335,10 +335,10 @@ classdef XCVR
                 false ) ;
             obj.bladerf.set_status(rv) ;
             obj.bladerf.check('bladerf_enable_module') ;
-            
+
             % Unlock the configuration for changing
             obj.config.unlock() ;
         end
-        
+
     end
 end
