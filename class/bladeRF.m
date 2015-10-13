@@ -11,6 +11,7 @@ classdef bladeRF < handle
     end
 
     properties(SetAccess=immutable)
+        info
         versions
     end
 
@@ -127,21 +128,40 @@ classdef bladeRF < handle
             obj.versions.lib = ver_ptr.value;
 
             % FX3 firmware version
-            [ver, ver_ptr]  = bladeRF.empty_version();
+            [ver, ver_ptr] = bladeRF.empty_version();
             obj.status = calllib('libbladeRF', 'bladerf_fw_version', dptr, ver_ptr);
             obj.check('bladerf_fw_version');
             obj.versions.firmware = ver_ptr.value;
 
             % FPGA version
-            [ver, ver_ptr]  = bladeRF.empty_version();
+            [ver, ver_ptr] = bladeRF.empty_version();
             obj.status = calllib('libbladeRF', 'bladerf_fpga_version', dptr, ver_ptr);
             obj.check('bladerf_fpga_version');
             obj.versions.fpga = ver_ptr.value;
 
-
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % Populate information
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+            % Serial number (Needs to be allocated >= 33 bytes)
+            serial = repmat(' ', 1, 33);
+            obj.status = calllib('libbladeRF', 'bladerf_get_serial', dptr, serial);
+            obj.check('bladerf_get_serial');
+            obj.info.serial = serial;
+
+            % TODO: FPGA size
+            % obj.info.fpga_size
+
+            % TODO: USB speed
+            % obj.info.usb_speed
+
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % VCTCXO
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+            % obj.vctcxo
+            % TODO: Saved trim
+            % TODO: Current trim
 
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % Create transceiver chain
