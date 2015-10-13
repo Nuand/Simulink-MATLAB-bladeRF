@@ -64,11 +64,10 @@ classdef bladeRF < handle
             if rv < 0
                 error('bladeRF:devices', strcat('Error retrieving devices: ', calllib('libbladeRF', 'bladerf_strerror', rv))) ;
             end
-            fprintf('Devices got: %d', rv) ;
+
             if rv > 0
                 for x=0:rv-1
                     ptr = pdevlist+x ;
-                    ptr.Value
                     devs(x+1) = ptr.Value ;
                     devs(x+1).serial = char(devs(x+1).serial(1:end-1)) ;
                 end
