@@ -120,7 +120,12 @@ classdef bladeRF < handle
             disp('Delete bladeRF called') ;
             calllib('libbladeRF', 'bladerf_close', obj.device) ;
         end
-        
+
+        % Just a convenience wrapper
+        function close(obj)
+            obj.delete;
+        end
+
         % TX samples immediately
         function ret = send(obj, x)
             % Send something
