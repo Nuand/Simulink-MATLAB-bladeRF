@@ -145,7 +145,7 @@ classdef bladeRF < handle
 
             % Serial number (Needs to be allocated >= 33 bytes)
             serial = repmat(' ', 1, 33);
-            obj.status = calllib('libbladeRF', 'bladerf_get_serial', dptr, serial);
+            [obj.status, ~, serial] = calllib('libbladeRF', 'bladerf_get_serial', dptr, serial);
             obj.check('bladerf_get_serial');
             obj.info.serial = serial;
 
