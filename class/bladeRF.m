@@ -54,6 +54,17 @@ classdef bladeRF < handle
                 end
             end
         end
+
+        % Get an empty version structure initialized to known values
+        function [ver, ver_ptr] = empty_version
+            ver = libstruct('bladerf_version');
+            ver.major = 0;
+            ver.minor = 0;
+            ver.patch = 0;
+            ver.describe = 'Unknown';
+
+            ver_ptr = libpointer('bladerf_version', ver);
+        end
     end
 
     methods(Static)
@@ -83,23 +94,10 @@ classdef bladeRF < handle
         function obj = bladeRF(devstring)
             bladeRF.load_library() ;
 
-            % Populate version information
-            ver = libstruct('bladerf_version');
-            ver.major = 0;
-            ver.minor = 0;
-            ver.patch = 0;
-            ver.describe = 'Unknown';
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % Open the device
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-            ver_ptr = libpointer('bladerf_version', ver);
-
-            calllib('libbladeRF', 'bladerf_version', ver_ptr) ;
-            obj.versions.lib = ver_ptr.value;
-
-            obj.versions.matlab.major = 1 ;
-            obj.versions.matlab.minor = 0 ;
-            obj.versions.matlab.patch = 0 ;
-
-            % Open the instance
             dptr = libpointer('bladerfPtr') ;
             obj.status = calllib('libbladeRF', 'bladerf_open',dptr, devstring) ;
 
@@ -109,7 +107,46 @@ classdef bladeRF < handle
             % Save off the device pointer
             obj.device = dptr ;
 
-            % Create the device transceiver chain
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % TODO: Load/Check FPGA
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % Populate version information
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+            % Version of this MATLAB code
+            obj.versions.matlab.major = 1 ;
+            obj.versions.matlab.minor = 0 ;
+            obj.versions.matlab.patch = 0 ;
+
+            % libbladeRF version
+            [ver, ver_ptr] = bladeRF.empty_version();
+            calllib('libbladeRF', 'bladerf_version', ver_ptr) ;
+            obj.versions.lib = ver_ptr.value;
+
+            % FX3 firmware version
+            [ver, ver_ptr]  = bladeRF.empty_version();
+            obj.status = calllib('libbladeRF', 'bladerf_fw_version', dptr, ver_ptr);
+            obj.check('bladerf_fw_version');
+            obj.versions.firmware = ver_ptr.value;
+
+            % FPGA version
+            [ver, ver_ptr]  = bladeRF.empty_version();
+            obj.status = calllib('libbladeRF', 'bladerf_fpga_version', dptr, ver_ptr);
+            obj.check('bladerf_fpga_version');
+            obj.versions.fpga = ver_ptr.value;
+
+
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % Populate information
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % Create transceiver chain
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
             obj.rx = XCVR(obj, 'RX') ;
             obj.tx = XCVR(obj, 'TX') ;
         end
