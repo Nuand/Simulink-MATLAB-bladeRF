@@ -1,6 +1,6 @@
 classdef bladeRF < handle
     % Read-only handle properties
-    properties(Access={?XCVR, ?IQCorrections, ?StreamConfig})
+    properties(Access={?XCVR, ?IQCorrections, ?StreamConfig, ?VCTCXO})
         status  % Device status of last call
         device  % Device handle
     end
@@ -8,6 +8,7 @@ classdef bladeRF < handle
     properties
         rx      % Receive chain
         tx      % Transmit chain
+        vctcxo  % VCTCXO control
     end
 
     properties(SetAccess=immutable)
@@ -176,12 +177,9 @@ classdef bladeRF < handle
 
 
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            % VCTCXO
+            % VCTCXO control
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-            % obj.vctcxo
-            % TODO: Saved trim
-            % TODO: Current trim
+            obj.vctcxo = VCTCXO(obj);
 
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % Create transceiver chain
