@@ -149,11 +149,31 @@ classdef bladeRF < handle
             obj.check('bladerf_get_serial');
             obj.info.serial = serial;
 
-            % TODO: FPGA size
-            % obj.info.fpga_size
+            % FPGA size
+            fpga_size = 'BLADERF_FPGA_UNKNOWN';
+            [obj.status, ~, fpga_size] = calllib('libbladeRF', 'bladerf_get_fpga_size', dptr, fpga_size);
+            obj.check('bladerf_get_fpga_size');
 
-            % TODO: USB speed
-            % obj.info.usb_speed
+            switch fpga_size
+                case 'BLADERF_FPGA_40KLE'
+                    obj.info.fpga_size = '40 kLE';
+                case 'BLADERF_FPGA_115KLE'
+                    obj.info.fpga_size = '115 kLE';
+                otherwise
+                    error(strcat('Unexpected FPGA size: ', fpga_size))
+            end
+
+            % USB Speed
+            usb_speed = calllib('libbladeRF', 'bladerf_device_speed', dptr);
+            switch usb_speed
+                case 'BLADERF_DEVICE_SPEED_HIGH'
+                    obj.info.usb_speed = 'Hi-Speed (2.0)';
+                case 'BLADERF_DEVICE_SPEED_SUPER'
+                    obj.info.usb_speed = 'SuperSpeed (3.0)';
+                otherwise
+                    error(strcat('Unexpected device speed: ', usb_speed))
+            end
+
 
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % VCTCXO
