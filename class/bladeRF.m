@@ -43,7 +43,7 @@ classdef bladeRF < handle
                     case 'maci64'
                         [notfound, warnings] = loadlibrary('libbladeRF.dylib', @libbladeRF_proto, 'notempdir') ;
                     otherwise
-                        disp('What the fuck') ;
+                        error(strcat('Unexpected architecture: ', arch))
                 end
                 if isempty(notfound) == false
                     error('bladeRF:loadlibrary', 'functions missing from library' ) ;
