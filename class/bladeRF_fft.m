@@ -1,3 +1,25 @@
+%
+% Copyright (c) 2015 Nuand LLC
+%
+% Permission is hereby granted, free of charge, to any person obtaining a copy
+% of this software and associated documentation files (the "Software"), to deal
+% in the Software without restriction, including without limitation the rights
+% to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+% copies of the Software, and to permit persons to whom the Software is
+% furnished to do so, subject to the following conditions:
+%
+% The above copyright notice and this permission notice shall be included in
+% all copies or substantial portions of the Software.
+%
+% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+% IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+% FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+% AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+% THE SOFTWARE.
+%
+
 function varargout = bladeRF_fft(varargin)
     gui_Singleton = 1;
     gui_State = struct('gui_Name',       mfilename, ...
@@ -24,31 +46,31 @@ function bladeRF_fft_OpeningFcn(hObject, eventdata, handles, varargin)
     % UIWAIT makes bladeRF_fft wait for user response (see UIRESUME)
     % uiwait(handles.figure1);
     handles.bladerf = bladeRF('*:instance=0') ;
-    
+
     % Running flag
     handles.running = false ;
-    
+
     % Set text labels
     set(handles.vga1, 'String', num2str(handles.bladerf.rx.vga1)) ;
     set(handles.vga2, 'String', num2str(handles.bladerf.rx.vga2)) ;
-    
+
     val = handles.bladerf.rx.samplerate ;
     set(handles.samplerate, 'String', num2str(val)) ;
     set(handles.samplerate, 'Value', val ) ;
-    
+
     val = handles.bladerf.rx.frequency ;
     set(handles.frequency, 'String', num2str(val)) ;
     set(handles.frequency, 'Value', val) ;
-    
+
     set(handles.corr_dc, 'String', num2str(handles.bladerf.rx.corrections.dc)) ;
     set(handles.corr_gain, 'String', num2str(handles.bladerf.rx.corrections.gain)) ;
     set(handles.corr_phase, 'String', num2str(handles.bladerf.rx.corrections.phase)) ;
-    
+
     % Update handles structure
     guidata(hObject, handles);
 end
 
-function varargout = bladeRF_fft_OutputFcn(hObject, eventdata, handles) 
+function varargout = bladeRF_fft_OutputFcn(hObject, eventdata, handles)
     varargout{1} = handles.output;
 end
 
@@ -58,21 +80,21 @@ function displaytype_Callback(hObject, eventdata, handles)
     switch items{index}
         case 'FFT (dB)'
             set(handles.xlabel, 'String', 'Frequency (MHz)') ;
-            
+
         case 'FFT (linear)'
             set(handles.xlabel, 'String', 'Frequency (MHz)') ;
-            
+
         case 'Time (2-Channel)'
             set(handles.axes1, 'XScale', 'linear') ;
             set(handles.xlabel, 'String', 'Time (s)') ;
-            
+
         case 'Time (XY)'
             set(handles.axes1,'XScale','linear') ;
             set(handles.xlabel,'String', 'X (counts)') ;
-            
+
         otherwise
             disp(strcat('Cannot figure out ', items{index}))
-            
+
     end
 end
 
@@ -91,19 +113,19 @@ function plot_data(handles, f, s, x)
         case 'FFT (dB)'
             plot(linspace(f-s/2, f+s/2, length(x)), 20*log10(abs(fftshift(fft(x))))) ;
             axis([f-s/2, f+s/2 0 140]) ;
-            
+
         case 'FFT (linear)'
             plot(linspace(f-s/2, f+s/2, length(x)), abs(fftshift(fft(x)))) ;
             axis([f-s/2, f+s/2, 0, 10^6]) ;
-        
+
         case 'Time (2-Channel)'
             plot(linspace(0,(length(x)-1)/s,length(x)), real(x), linspace(0,(length(x)-1)/s,length(x)), imag(x)) ;
             axis([0, (length(x)-1)/s, -2500, 2500]) ;
-            
+
         case 'Time (XY)'
             plot(x, 'b.') ;
             axis([-2500, 2500, -2500, 2500]) ;
-            
+
         otherwise
             disp(strcat('Dunno what to do with ', selected))
     end
@@ -130,12 +152,12 @@ function actionbutton_Callback(hObject, eventdata, handles)
                 guidata(hObject, handles) ;
             end
             handles.bladerf.rx.stop
-            
+
         case 'Stop'
             set(hObject,'String','Start') ;
             handles.running = false ;
             guidata(hObject, handles);
-            
+
         otherwise
             warning('No idea what you''re talking about') ;
     end
