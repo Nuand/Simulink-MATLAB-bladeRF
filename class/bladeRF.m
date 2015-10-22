@@ -113,6 +113,33 @@ classdef bladeRF < handle
             end
             calllib('libbladeRF', 'bladerf_free_device_list', pdevlist) ;
         end
+
+        %% Set libbladeRF's log level. Options are: verbose, debug, info, error, warning, critical, silent
+        function log_level(level)
+            level = lower(level);
+
+            switch level
+                case 'verbose'
+                    enum_val = 'BLADERF_LOG_LEVEL_VERBOSE';
+                case 'debug'
+                    enum_val = 'BLADERF_LOG_LEVEL_DEBUG';
+                case 'info'
+                    enum_val = 'BLADERF_LOG_LEVEL_INFO';
+                case 'warning'
+                    enum_val = 'BLADERF_LOG_LEVEL_WARNING';
+                case 'error'
+                    enum_val = 'BLADERF_LOG_LEVEL_ERROR';
+                case 'critical'
+                    enum_val = 'BLADERF_LOG_LEVEL_CRITICAL';
+                case 'silent'
+                    enum_val = 'BLADERF_LOG_LEVEL_SILENT';
+                otherwise
+                    error(strcat('Invalid log level: ', level));
+            end
+
+            bladeRF.load_library();
+            calllib('libbladeRF', 'bladerf_log_set_verbosity', enum_val);
+        end
     end
 
     methods
