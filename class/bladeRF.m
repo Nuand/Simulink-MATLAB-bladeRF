@@ -1,4 +1,10 @@
+%%
+% bladeRF MATLAB interface
 %
+% This object is a MATLAB wrapper around libbladeRF.
+%
+% TODO: Summaryize API here
+
 % Copyright (c) 2015 Nuand LLC
 %
 % Permission is hereby granted, free of charge, to any person obtaining a copy

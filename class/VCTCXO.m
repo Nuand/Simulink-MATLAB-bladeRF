@@ -1,3 +1,9 @@
+%%
+% VCTCXO - This is a submodule used by the bladeRF MATLAB wrapper.
+%
+% Do not use this directly.
+%
+
 %
 % Copyright (c) 2015 Nuand LLC
 %

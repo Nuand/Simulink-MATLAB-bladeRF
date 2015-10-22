@@ -1,3 +1,8 @@
+%%
+% bladeRF_fft A simple demo that receives and displays samples
+%
+% TODO Summarize usage here
+
 %
 % Copyright (c) 2015 Nuand LLC
 %
