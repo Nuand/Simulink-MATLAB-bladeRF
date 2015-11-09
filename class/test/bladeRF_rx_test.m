@@ -1,7 +1,7 @@
 dev = bladeRF();
 
 Fc = 450e6;
-Fs = 20e6;
+Fs = 5e6;
 
 n_sec          = 0.200;
 num_rxs        = 256;
