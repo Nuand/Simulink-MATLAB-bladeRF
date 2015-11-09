@@ -259,12 +259,12 @@ classdef XCVR
 
             % Setup defaults
             obj.config = StreamConfig ;
-            obj.samplerate = 1234567.89 ;
+            obj.samplerate = 3e6 ;
             obj.frequency = 1.0e9 ;
             obj.bandwidth = 1.5e6 ;
             if strcmp(dir, 'RX') == true
                 obj.vga1 = 30 ;
-                obj.vga2 = 30 ;
+                obj.vga2 = 0 ;
                 obj.lna = 'MAX' ;
             else
                 obj.vga1 = -8 ;
