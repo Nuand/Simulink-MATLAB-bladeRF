@@ -300,7 +300,7 @@ classdef XCVR
             obj.bladerf.check('bladerf_enable_module') ;
         end
 
-        function samples = receive(obj, num_samples, timeout_ms, time)
+        function [samples, actual_count, underrun] = receive(obj, num_samples, timeout_ms, time)
             if strcmp( obj.direction, 'RX' ) == true
                 if isempty(timeout_ms) == true
                     timeout_ms = 5000 ;
@@ -312,6 +312,7 @@ classdef XCVR
                 metad.reserved = 0 ;
                 metad.status = 0 ;
                 metad.timestamp = time ;
+                underrun = false ;
                 pmetad = libpointer('bladerf_metadata', metad) ;
                 [rv, ~, s16, ~] = calllib('libbladeRF', 'bladerf_sync_rx', ...
                     obj.bladerf.device, ...
@@ -319,6 +320,13 @@ classdef XCVR
                     num_samples, ...
                     pmetad, ...
                     timeout_ms ) ;
+
+                actual_count = pmetad.value.actual_count;
+
+                if actual_count ~= num_samples
+                    underrun = true;
+                end
+
                 obj.bladerf.set_status(rv) ;
                 obj.bladerf.check('bladerf_sync_rx') ;
                 samples = double(s16(1:2:end)) + double(s16(2:2:end))*1j ;
