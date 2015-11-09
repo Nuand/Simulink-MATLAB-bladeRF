@@ -157,6 +157,10 @@ classdef bladeRF < handle
             % Open the device
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+            if nargin < 1
+                devstring = '';
+            end
+
             dptr = libpointer('bladerfPtr') ;
             obj.status = calllib('libbladeRF', 'bladerf_open',dptr, devstring) ;
 
