@@ -94,28 +94,40 @@ classdef IQCorrections
             val = obj.dc ;
         end
 
-        function obj = set.phase(obj, val)
+        function obj = set.phase(obj, val_deg)
+            if val_deg < -10 || val_deg > 10
+                error('Phase correction value must be within [-10, 10] degrees.');
+            end
+
+            val_counts = round((val_deg * 4096 / 10));
+
             [rv, ~] = calllib('libbladeRF', 'bladerf_set_correction', ...
                 obj.bladerf.device, ...
                 obj.module, ...
                 'BLADERF_CORR_FPGA_PHASE', ...
-                val / 360.0 * 8192.0 ) ;
+                val_counts ) ;
+
             obj.bladerf.set_status(rv);
             obj.bladerf.check('bladerf_set_correction:phase') ;
+
+            %fprintf('Set phase correction: %f (%d)\n', val_deg, val_counts);
         end
 
-        function val = get.phase(obj)
-            x = int16(0) ;
+        function val_deg = get.phase(obj)
+            val_counts = int16(0) ;
             [rv, ~, x] = calllib('libbladeRF', 'bladerf_get_correction', ...
                 obj.bladerf.device, ...
                 obj.module, ...
                 'BLADERF_CORR_FPGA_PHASE', ...
-                x ) ;
+                val_counts ) ;
             obj.bladerf.set_status(rv) ;
             obj.bladerf.check('bladerf_get_correction:phase') ;
-            disp(num2str(x)) ;
-            obj.phase = double(x) * 360.0 / 8192.0 ;
-            val = obj.phase ;
+
+
+            val_deg = double(x) / (4096 / 10);
+            obj.phase = val_deg;
+
+            %fprintf('Get phase correction: %f (%d)\n', val_deg, val_counts);
         end
 
         function obj = set.gain(obj, val)
