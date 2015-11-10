@@ -64,6 +64,79 @@ function set_lnagain_selection(lnagain_widget, value)
     end
 end
 
+function [x, y, p] = new_plot(handles, type)
+    linkdata off;
+
+    fprintf('Request to set plot type to: %s\n', type);
+
+    % We need the center frequency and sample rate to derive X values
+    Fc = handles.bladerf.rx.frequency;
+    Fs = handles.bladerf.rx.samplerate;
+
+    % Reset sample values
+    xlen = length(handles.plot_data.x);
+    ylen = length(handles.plot_data.y);
+
+    x = zeros(1, xlen);
+    y = zeros(1, ylen);
+
+    % Configure plot properties based upon type
+    switch type
+        case 'FFT (dB)'
+            marker = 'b-';
+            set(handles.xlabel, 'String', 'Frequency (MHz)');
+
+            xmin = (Fc - Fs/2);
+            xmax = (Fc + Fs/2);
+            ymin = 0;
+            ymax = 140;
+
+            x = linspace(double(xmin), double(xmax), xlen);
+
+        case 'FFT (linear)'
+            marker = 'b-';
+            set(handles.xlabel, 'String', 'Frequency (MHz)');
+
+            xmin = (Fc - Fs/2);
+            xmax = (Fc + Fs/2);
+            ymin = 0;
+            ymax = 10e6;
+
+            x = linspace(double(xmin), double(xmax), xlen);
+
+        case 'Time (2-Channel)'
+            %set(handles.axes1, 'XScale', 'linear') ;
+            marker = 'b-';
+            set(handles.xlabel, 'String', 'Time (s)');
+
+            xmin = 0;
+            xmax = (length(handles.plot_data(y)) - 1) / Fs;
+            ymin = -2500;
+            ymax = -2500;
+
+            x = 0;
+
+        case 'Time (XY)'
+            %set(handles.axes1,'XScale','linear') ;
+            marker = 'b-';
+            set(handles.xlabel,'String', 'X (counts)');
+
+            xmin = -2500;
+            xmax = 2500;
+            ymin = -2500;
+            ymax = 2500;
+
+            handles.plot_data.x(:) = 0;
+
+        otherwise
+            error('Invalid plot type encountered');
+    end;
+
+    % Plot the initial values
+    p = plot(x, y, marker);
+    axis([xmin, xmax, ymin, ymax]);
+end
+
 function bladeRF_fft_OpeningFcn(hObject, eventdata, handles, varargin)
     % Choose default command line output for bladeRF_fft
     handles.output = hObject;
@@ -95,6 +168,15 @@ function bladeRF_fft_OpeningFcn(hObject, eventdata, handles, varargin)
     set(handles.corr_gain, 'String', num2str(handles.bladerf.rx.corrections.gain)) ;
     set(handles.corr_phase, 'String', num2str(handles.bladerf.rx.corrections.phase)) ;
 
+    % Initialize plot for default display mode
+    handles.plot_data.x = zeros(1, 4096);
+    handles.plot_data.y = zeros(1, 4096);
+
+    display_types = get(handles.displaytype, 'String');
+    default_type  = get(handles.displaytype, 'Value');
+    [handles.plot_data.x, handles.plot_data.y, handles.plot] = ...
+        new_plot(handles, display_types{default_type});
+
     % Update handles structure
     guidata(hObject, handles);
 end
@@ -106,25 +188,8 @@ end
 function displaytype_Callback(hObject, eventdata, handles)
     items = get(hObject,'String') ;
     index = get(hObject,'Value') ;
-    switch items{index}
-        case 'FFT (dB)'
-            set(handles.xlabel, 'String', 'Frequency (MHz)') ;
-
-        case 'FFT (linear)'
-            set(handles.xlabel, 'String', 'Frequency (MHz)') ;
-
-        case 'Time (2-Channel)'
-            set(handles.axes1, 'XScale', 'linear') ;
-            set(handles.xlabel, 'String', 'Time (s)') ;
-
-        case 'Time (XY)'
-            set(handles.axes1,'XScale','linear') ;
-            set(handles.xlabel,'String', 'X (counts)') ;
-
-        otherwise
-            error(strcat('Unexpected display type selected: ', items{index}))
-
-    end
+    [handles.plot_data.x, handles.plot_data.y, handles.plot] = ...
+        new_plot(handles, items{index});
 end
 
 function displaytype_CreateFcn(hObject, eventdata, handles)
@@ -133,53 +198,30 @@ function displaytype_CreateFcn(hObject, eventdata, handles)
     end
 end
 
-function plot_data(handles, f, s, x)
-    items = get(handles.displaytype,'String') ;
-    index = get(handles.displaytype,'Value') ;
-    selected = items{index} ;
-    axes(handles.axes1) ;
-    switch selected
-        case 'FFT (dB)'
-            plot(linspace(f-s/2, f+s/2, length(x)), 20*log10(abs(fftshift(fft(x))))) ;
-            axis([f-s/2, f+s/2 0 140]) ;
-
-        case 'FFT (linear)'
-            plot(linspace(f-s/2, f+s/2, length(x)), abs(fftshift(fft(x)))) ;
-            axis([f-s/2, f+s/2, 0, 10^6]) ;
-
-        case 'Time (2-Channel)'
-            plot(linspace(0,(length(x)-1)/s,length(x)), real(x), linspace(0,(length(x)-1)/s,length(x)), imag(x)) ;
-            axis([0, (length(x)-1)/s, -2500, 2500]) ;
-
-        case 'Time (XY)'
-            plot(x, 'b.') ;
-            axis([-2500, 2500, -2500, 2500]) ;
-
-        otherwise
-            error(strcat('Unexpected plot type selection: ', selected))
-    end
-    grid on ;
-end
-
 function actionbutton_Callback(hObject, eventdata, handles)
     action = get(hObject,'String');
     switch action
         case 'Start'
             set(hObject,'String','Stop') ;
             handles.running = true ;
-            f = double(handles.bladerf.rx.frequency) ;
-            s = double(handles.bladerf.rx.samplerate) ;
             handles.bladerf.rx.start
             guidata(hObject, handles);
+
+            num_samples = length(handles.plot_data.y);
+
             % Why can't I check handles.running here?
             % while handles.running == true
             while strcmp(get(hObject,'String'), 'Stop') == true
-                f = get(handles.frequency,'Value') ;
-                s = get(handles.samplerate,'Value') ;
-                x = handles.bladerf.rx.receive(4096, 5000, 0) ;
-                plot_data(handles, f, s, x) ;
-                drawnow ;
+                [handles.plot_data.y(:), actual, underrun] =...
+                    handles.bladerf.rx.receive(num_samples, 5000, 0);
+
+                handles.plot.YData(:) = abs(handles.plot_data.y);
                 guidata(hObject, handles) ;
+                %refreshdata(handles.plot);
+
+                if underrun
+                    disp 'Underrun'
+                end
             end
             handles.bladerf.rx.stop
 
@@ -212,6 +254,7 @@ end
 function vga1_Callback(hObject, eventdata, handles)
     val = str2num(get(hObject, 'String')) ;
     if isempty(val)
+
         val = handles.bladerf.rx.vga1 ;
     end
 
