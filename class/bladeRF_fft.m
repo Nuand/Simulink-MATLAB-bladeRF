@@ -44,6 +44,25 @@ function varargout = bladeRF_fft(varargin)
     end
 end
 
+function set_bandwidth_selection(bandwidth_widget, value)
+    strings = get(bandwidth_widget, 'String');
+
+    for n = 1:length(strings)
+        if value == (str2num(strings{n}) * 1e6)
+            set(bandwidth_widget, 'Value', n);
+        end
+    end
+end
+
+function set_lnagain_selection(lnagain_widget, value)
+    strings = get(lnagain_widget, 'String');
+    for n = 1:length(strings)
+        if strcmpi(strings{n}, value)
+            set(lnagain_widget, 'Value', n)
+        end
+    end
+end
+
 function bladeRF_fft_OpeningFcn(hObject, eventdata, handles, varargin)
     % Choose default command line output for bladeRF_fft
     handles.output = hObject;
@@ -58,10 +77,13 @@ function bladeRF_fft_OpeningFcn(hObject, eventdata, handles, varargin)
     % Set text labels
     set(handles.vga1, 'String', num2str(handles.bladerf.rx.vga1)) ;
     set(handles.vga2, 'String', num2str(handles.bladerf.rx.vga2)) ;
+    set_lnagain_selection(handles.lnagain, handles.bladerf.rx.lna);
 
     val = handles.bladerf.rx.samplerate ;
     set(handles.samplerate, 'String', num2str(val)) ;
     set(handles.samplerate, 'Value', val ) ;
+
+    set_bandwidth_selection(handles.bandwidth, handles.bladerf.rx.bandwidth);
 
     val = handles.bladerf.rx.frequency ;
     set(handles.frequency, 'String', num2str(val)) ;
@@ -132,7 +154,7 @@ function plot_data(handles, f, s, x)
             axis([-2500, 2500, -2500, 2500]) ;
 
         otherwise
-            disp(strcat('Dunno what to do with ', selected))
+            error(strcat('Unexpected plot type selection: ', selected))
     end
     grid on ;
 end
