@@ -277,7 +277,16 @@ function corr_dc_CreateFcn(hObject, eventdata, handles)
 end
 
 function corr_gain_Callback(hObject, eventdata, handles)
+    val = str2num(get(hObject, 'String'));
+    if isempty(val)
+        val = handles.bladerf.rx.corrections.gain;
+    end
 
+    fprintf('GUI requset to set IQ gain correction to: %f\n', val)
+    handles.bladerf.rx.corrections.gain = val;
+
+    set(hObject, 'String', num2str(val));
+    set(hObject, 'Value',  val);
 end
 
 function corr_gain_CreateFcn(hObject, eventdata, handles)
