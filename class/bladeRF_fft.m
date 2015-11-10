@@ -1,4 +1,4 @@
-%%
+%
 % bladeRF_fft A simple demo that receives and displays samples
 %
 % TODO Summarize usage here
@@ -253,7 +253,13 @@ function corr_gain_CreateFcn(hObject, eventdata, handles)
 end
 
 function corr_phase_Callback(hObject, eventdata, handles)
-
+    val = str2num(get(hObject, 'String'));
+    if ~isnan(val)
+        handles.bladerf.rx.corrections.phase = val;
+        val = handles.bladerf.rx.corrections.phase;
+        set(hObject, 'String', num2str(val));
+        set(hObject, 'Value', val);
+    end
 end
 
 function corr_phase_CreateFcn(hObject, eventdata, handles)

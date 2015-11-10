@@ -236,7 +236,6 @@ classdef bladeRF < handle
                     error(strcat('Unexpected device speed: ', usb_speed))
             end
 
-
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % VCTCXO control
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
