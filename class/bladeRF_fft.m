@@ -98,7 +98,7 @@ function displaytype_Callback(hObject, eventdata, handles)
             set(handles.xlabel,'String', 'X (counts)') ;
 
         otherwise
-            disp(strcat('Cannot figure out ', items{index}))
+            error(strcat('Unexpected display type selected: ', items{index}))
 
     end
 end
@@ -138,7 +138,8 @@ function plot_data(handles, f, s, x)
 end
 
 function actionbutton_Callback(hObject, eventdata, handles)
-    switch get(hObject,'String')
+    action = get(hObject,'String');
+    switch action
         case 'Start'
             set(hObject,'String','Stop') ;
             handles.running = true ;
@@ -164,13 +165,16 @@ function actionbutton_Callback(hObject, eventdata, handles)
             guidata(hObject, handles);
 
         otherwise
-            warning('No idea what you''re talking about') ;
+            error(strcat('Unexpected button action: ', action))
     end
 end
 
 function lnagain_Callback(hObject, eventdata, handles)
     items = get(hObject,'String') ;
     index = get(hObject,'Value') ;
+
+    %fprintf('GUI Request to set LNA gain to: %s\n', items{index})
+
     handles.bladerf.rx.lna = items{index} ;
     guidata(hObject, handles);
 end
@@ -182,11 +186,13 @@ function lnagain_CreateFcn(hObject, eventdata, handles)
 end
 
 function vga1_Callback(hObject, eventdata, handles)
-    val = str2double(get(hObject, 'String')) ;
-    if isnan(val) == true
+    val = str2num(get(hObject, 'String')) ;
+    if isempty(val)
         val = handles.bladerf.rx.vga1 ;
-        disp('Not numeric') ;
     end
+
+    %fprintf('GUI request to set VGA1: %d\n', val);
+
     handles.bladerf.rx.vga1 = val ;
     set(hObject,'String', num2str(handles.bladerf.rx.vga1)) ;
     guidata(hObject, handles);
@@ -199,11 +205,13 @@ function vga1_CreateFcn(hObject, eventdata, handles)
 end
 
 function vga2_Callback(hObject, eventdata, handles)
-    val = str2double(get(hObject,'String')) ;
-    if isnan(val) == true
+    val = str2num(get(hObject,'String')) ;
+    if isempty(val)
         val = handles.bladerf.rx.vga2 ;
-        disp( 'Not Numeric' ) ;
     end
+
+    %fprintf('GUI request to set VGA2: %d\n', val);
+
     handles.bladerf.rx.vga2 = val ;
     set(hObject, 'String', num2str(handles.bladerf.rx.vga2)) ;
     guidata(hObject, handles);
@@ -222,8 +230,12 @@ end
 function bandwidth_Callback(hObject, eventdata, handles)
     values = get(hObject,'String') ;
     index = get(hObject,'Value') ;
-    selected = str2double(values{index}) ;
-    handles.bladerf.rx.bandwidth = selected * 1.0e6 ;
+    selected = str2num(values{index}) ;
+
+    bw = selected * 1.0e6;
+    %fprintf('GUI request to set bandwidth to: %f\n', bw);
+
+    handles.bladerf.rx.bandwidth = bw;
 end
 
 function bandwidth_CreateFcn(hObject, eventdata, handles)
@@ -254,12 +266,17 @@ end
 
 function corr_phase_Callback(hObject, eventdata, handles)
     val = str2num(get(hObject, 'String'));
-    if ~isnan(val)
-        handles.bladerf.rx.corrections.phase = val;
+    if isempty(val)
         val = handles.bladerf.rx.corrections.phase;
-        set(hObject, 'String', num2str(val));
-        set(hObject, 'Value', val);
     end
+
+
+    %fprintf('GUI requset to set phase correction to: %f\n', val)
+    handles.bladerf.rx.corrections.phase = val;
+
+    val = handles.bladerf.rx.corrections.phase;
+    set(hObject, 'String', num2str(val));
+    set(hObject, 'Value', val);
 end
 
 function corr_phase_CreateFcn(hObject, eventdata, handles)
@@ -270,9 +287,12 @@ end
 
 function samplerate_Callback(hObject, eventdata, handles)
     val = str2num(get(hObject, 'String')) ;
-    if isnan(val) == true
+    if isempty(val)
         val = handles.bladerf.rx.samplerate ;
     end
+
+    %fprintf('GUI request to set samplerate to: %f\n', val);
+
     handles.bladerf.rx.samplerate = val ;
     val = handles.bladerf.rx.samplerate ;
     set(hObject, 'String', num2str(val)) ;
@@ -287,9 +307,12 @@ end
 
 function frequency_Callback(hObject, eventdata, handles)
     val = str2num(get(hObject, 'String')) ;
-    if isnan(val) == true
+    if isempty(val)
         val = handles.bladerf.rx.frequency ;
     end
+
+    %fprintf('GUI request to set frequency: %d\n', val);
+
     handles.bladerf.rx.frequency = val ;
     set(hObject, 'String', num2str(val)) ;
     set(hObject, 'Value', val) ;
