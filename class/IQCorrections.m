@@ -58,7 +58,7 @@ classdef IQCorrections
                 error('DC offset correction value for Q channel is outside allowed range.');
             end
 
-            fprintf('Setting I DC offset correction: %d\n', val);
+            %fprintf('Setting I DC offset correction: %d\n', val);
 
             [rv, ~] = calllib('libbladeRF', 'bladerf_set_correction', ...
                               obj.bladerf.device, ...
@@ -75,7 +75,7 @@ classdef IQCorrections
                 error('DC offset correction value for Q channel is outside allowed range.');
             end
 
-            fprintf('Setting Q DC offset correction: %d\n', val);
+            %fprintf('Setting Q DC offset correction: %d\n', val);
 
             [rv, ~] = calllib('libbladeRF', 'bladerf_set_correction', ...
                               obj.bladerf.device, ...
@@ -95,8 +95,6 @@ classdef IQCorrections
                                    obj.module, ...
                                    'BLADERF_CORR_LMS_DCOFF_I', ...
                                    val ) ;
-
-            fprintf('Got %d...\n', val);
 
             obj.bladerf.set_status(rv) ;
             obj.bladerf.check('bladerf_get_correction:dc_i') ;
