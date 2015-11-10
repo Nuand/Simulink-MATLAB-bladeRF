@@ -34,64 +34,84 @@ classdef IQCorrections
     end
 
     properties
-        dc
+        dc_i
+        dc_q
         gain
         phase
     end
 
     methods
         % Constructor
-        function obj = IQCorrections(dev, module, dc, phase, gain)
+        function obj = IQCorrections(dev, module, dc_i, dc_q, phase, gain)
             obj.bladerf = dev ;
             obj.module = module ;
-            obj.dc = dc ;
+            obj.dc_i = dc_i ;
+            obj.dc_q = dc_q ;
             obj.phase = phase ;
             obj.gain = gain ;
         end
 
+
         % Property Setters/getters
-        function obj = set.dc(obj, val)
-%             x = real(val) ;
-%             [rv, ~] = calllib('libbladeRF', 'bladerf_set_correction', ...
-%                 obj.bladerf.device, ...
-%                 obj.module, ...
-%                 'BLADERF_CORR_LMS_DCOFF_I', ...
-%                 x ) ;
-%             obj.bladerf.set_status(rv) ;
-%             obj.bladerf.check('bladerf_set_correction:dc') ;
-%
-%             x = imag(val) ;
-%             [rv, ~] = calllib('libbladeRF', 'bladerf_set_correction', ...
-%                 obj.bladerf.device, ...
-%                 obj.module, ...
-%                 'BLADERF_CORR_LMS_DCOFF_Q', ...
-%                 x ) ;
-%             obj.bladerf.set_status(rv) ;
-%             obj.bladerf.check('bladerf_set_correction:dc') ;
+        function obj = set.dc_i(obj, val)
+            if val < -2048 || val > 2048
+                error('DC offset correction value for Q channel is outside allowed range.');
+            end
+
+            fprintf('Setting I DC offset correction: %d\n', val);
+
+            [rv, ~] = calllib('libbladeRF', 'bladerf_set_correction', ...
+                              obj.bladerf.device, ...
+                              obj.module, ...
+                              'BLADERF_CORR_LMS_DCOFF_I', ...
+                              val) ;
+
+            obj.bladerf.set_status(rv) ;
+            obj.bladerf.check('bladerf_set_correction:dc_i') ;
         end
 
-        function val = get.dc(obj)
-            x = int16(0) ;
-            [rv, ~, x] = calllib('libbladeRF', 'bladerf_get_correction', ...
-                obj.bladerf.device, ...
-                obj.module, ...
-                'BLADERF_CORR_LMS_DCOFF_I', ...
-                x ) ;
-            obj.bladerf.set_status(rv) ;
-            obj.bladerf.check('bladerf_get_correction:dc') ;
-            disp( num2str(x) ) ;
-            obj.dc = double(x) ;
+        function obj = set.dc_q(obj, val)
+            if val < -2048 || val > 2048
+                error('DC offset correction value for Q channel is outside allowed range.');
+            end
 
-            [rv, ~, x] = calllib('libbladeRF', 'bladerf_get_correction', ...
-                obj.bladerf.device, ...
-                obj.module, ...
-                'BLADERF_CORR_LMS_DCOFF_Q', ...
-                x ) ;
+            fprintf('Setting Q DC offset correction: %d\n', val);
+
+            [rv, ~] = calllib('libbladeRF', 'bladerf_set_correction', ...
+                              obj.bladerf.device, ...
+                              obj.module, ...
+                              'BLADERF_CORR_LMS_DCOFF_Q', ...
+                              val) ;
+
             obj.bladerf.set_status(rv) ;
-            obj.bladerf.check('bladerf_get_correction:dc') ;
-            disp( num2str(x) ) ;
-            obj.dc = obj.dc + double(x) *1j ;
-            val = obj.dc ;
+            obj.bladerf.check('bladerf_set_correction:dc_q') ;
+        end
+
+        function val = get.dc_i(obj)
+
+            val = int16(0) ;
+            [rv, ~, val] = calllib('libbladeRF', 'bladerf_get_correction', ...
+                                   obj.bladerf.device, ...
+                                   obj.module, ...
+                                   'BLADERF_CORR_LMS_DCOFF_I', ...
+                                   val ) ;
+
+            fprintf('Got %d...\n', val);
+
+            obj.bladerf.set_status(rv) ;
+            obj.bladerf.check('bladerf_get_correction:dc_i') ;
+        end
+
+        function val = get.dc_q(obj)
+            val = int16(0);
+            [rv, ~, val] = calllib('libbladeRF', 'bladerf_get_correction', ...
+                                 obj.bladerf.device, ...
+                                 obj.module, ...
+                                 'BLADERF_CORR_LMS_DCOFF_Q', ...
+                                 val ) ;
+
+            obj.bladerf.set_status(rv) ;
+            obj.bladerf.check('bladerf_get_correction:dc_q') ;
         end
 
         function obj = set.phase(obj, val_deg)

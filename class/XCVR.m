@@ -270,7 +270,7 @@ classdef XCVR
                 obj.vga1 = -8 ;
                 obj.vga2 = 16 ;
             end
-            obj.corrections = IQCorrections(dev, obj.module, 0+0j, 0, 0) ;
+            obj.corrections = IQCorrections(dev, obj.module, 0, 0, 0, 0) ;
         end
 
         %% Usage
