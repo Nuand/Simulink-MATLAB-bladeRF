@@ -33,6 +33,7 @@ function varargout = bladeRF_fft(varargin)
                        'gui_OutputFcn',  @bladeRF_fft_OutputFcn, ...
                        'gui_LayoutFcn',  [] , ...
                        'gui_Callback',   []);
+
     if nargin && ischar(varargin{1})
         gui_State.gui_Callback = str2func(varargin{1});
     end
@@ -89,7 +90,8 @@ function bladeRF_fft_OpeningFcn(hObject, eventdata, handles, varargin)
     set(handles.frequency, 'String', num2str(val)) ;
     set(handles.frequency, 'Value', val) ;
 
-    set(handles.corr_dc, 'String', num2str(handles.bladerf.rx.corrections.dc)) ;
+    set(handles.corr_dc_i, 'String', num2str(handles.bladerf.rx.corrections.dc_i)) ;
+    set(handles.corr_dc_q, 'String', num2str(handles.bladerf.rx.corrections.dc_q)) ;
     set(handles.corr_gain, 'String', num2str(handles.bladerf.rx.corrections.gain)) ;
     set(handles.corr_phase, 'String', num2str(handles.bladerf.rx.corrections.phase)) ;
 
@@ -266,14 +268,42 @@ function bandwidth_CreateFcn(hObject, eventdata, handles)
     end
 end
 
-function corr_dc_Callback(hObject, eventdata, handles)
+function corr_dc_i_Callback(hObject, eventdata, handles)
+    val = str2num(get(hObject, 'String'));
+    if isempty(val)
+        val = handles.bladerf.rx.corrections.dc_i;
+    end
 
+    fprintf('GUI request to set I DC correction to: %f\n', val)
+    handles.bladerf.rx.corrections.dc_i = val;
+
+    set(hObject, 'String', num2str(val));
+    set(hObject, 'Value',  val);
 end
 
-function corr_dc_CreateFcn(hObject, eventdata, handles)
+function corr_dc_i_CreateFcn(hObject, eventdata, handles)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         set(hObject,'BackgroundColor','white');
     end
+end
+
+function corr_dc_q_CreateFcn(hObject, eventdata, handles)
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
+end
+
+function corr_dc_q_Callback(hObject, eventdata, handles)
+    val = str2num(get(hObject, 'String'));
+    if isempty(val)
+        val = handles.bladerf.rx.corrections.dc_q;
+    end
+
+    fprintf('GUI request to set IQ DC correction to: %f\n', val)
+    handles.bladerf.rx.corrections.dc_q = val;
+
+    set(hObject, 'String', num2str(val));
+    set(hObject, 'Value',  val);
 end
 
 function corr_gain_Callback(hObject, eventdata, handles)
@@ -282,12 +312,13 @@ function corr_gain_Callback(hObject, eventdata, handles)
         val = handles.bladerf.rx.corrections.gain;
     end
 
-    fprintf('GUI requset to set IQ gain correction to: %f\n', val)
+    fprintf('GUI request to set IQ gain correction to: %f\n', val)
     handles.bladerf.rx.corrections.gain = val;
 
     set(hObject, 'String', num2str(val));
     set(hObject, 'Value',  val);
 end
+
 
 function corr_gain_CreateFcn(hObject, eventdata, handles)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
@@ -301,8 +332,7 @@ function corr_phase_Callback(hObject, eventdata, handles)
         val = handles.bladerf.rx.corrections.phase;
     end
 
-
-    %fprintf('GUI requset to set phase correction to: %f\n', val)
+    %fprintf('GUI request to set phase correction to: %f\n', val)
     handles.bladerf.rx.corrections.phase = val;
 
     val = handles.bladerf.rx.corrections.phase;
