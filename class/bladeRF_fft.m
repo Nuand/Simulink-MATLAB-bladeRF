@@ -532,8 +532,8 @@ function devicelist_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         set(hObject,'BackgroundColor','white');
     end
-    devs = bladeRF.devices ;
-    list = {} ;
+    devs = bladeRF.devices;
+    list = cell(1, length(devs));
     for idx=1:length(devs)
         switch devs(idx).backend
             case 'BLADERF_BACKEND_LIBUSB'
