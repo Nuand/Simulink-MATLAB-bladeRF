@@ -74,6 +74,17 @@ function update_plot_config(handles)
 
     info = handles.plot_info{id};
 
+    % Reset data so we don't see "random" junk when switching displays
+    switch handles.plot_info{id}.name
+        case 'Time (XY)'
+            handles.plot.XData = zeros(1, handles.num_samples);
+
+        otherwise
+            handles.plot.XData = handles.plot_info{id}.x;
+    end
+
+    handles.plot.YData = zeros(1, handles.num_samples);
+
     % We don't want the figure axes to be changing while data is streaming
     axis(handles.axes1, 'manual');
 
@@ -114,7 +125,7 @@ function [plot_info] = init_plot_type(handles, type)
             plot_info.xmin = (Fc - Fs/2);
             plot_info.xmax = (Fc + Fs/2);
             plot_info.ymin = 0;
-            plot_info.ymax = 10e6;
+            plot_info.ymax = 1e6;
 
             plot_info.x = linspace(double(plot_info.xmin), ...
                                    double(plot_info.xmax), ...
@@ -222,22 +233,22 @@ function actionbutton_Callback(hObject, eventdata, handles)
     switch action
         case 'Start'
             set(hObject,'String','Stop') ;
-            handles.bladerf.rx.start
+            handles.bladerf.rx.start;
             guidata(hObject, handles);
 
             start = cputime;
             update = 1;
             framerate = 30;
+            num_samples = handles.num_samples;
 
-            samples = zeros(1, handles.num_samples);
+            samples = zeros(1, num_samples);
 
             while strcmp(get(hObject,'String'), 'Stop') == true
 
-                [samples(:), actual_count, underrun] = ...
-                    handles.bladerf.rx.receive(handles.num_samples, 5000, 0);
+                [samples(:), ~, underrun] = ...
+                    handles.bladerf.rx.receive(num_samples, 5000, 0);
 
                 if underrun
-                    now = cputime;
                     fprintf('Underrun @ t=%f\n', cputime - start);
                 elseif update
                     update = 0;
@@ -246,8 +257,20 @@ function actionbutton_Callback(hObject, eventdata, handles)
                     switch handles.plot_info{id}.name
                         case 'FFT (dB)'
                             handles.plot.YData = 20*log10(abs(fftshift(fft(samples))));
+
+                        case 'FFT (linear)'
+                            handles.plot.YData = abs(fftshift(fft(samples)));
+
+                        case 'Time (2-Channel)'
+                            handles.plot.XData = zeros(1, num_samples);
+                            handles.plot.YData = zeros(1, num_samples);
+
+                        case 'Time (XY)'
+                            handles.plot.XData = real(samples);
+                            handles.plot.YData = imag(samples);
+
                         otherwise
-                            ;
+                            error('Invalid plot selection encountered');
                     end
 
                     drawnow;
