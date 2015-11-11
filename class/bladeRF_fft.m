@@ -65,33 +65,52 @@ function set_lnagain_selection(lnagain_widget, value)
 end
 
 function update_plot_config(handles)
-    names = get(handles.displaytype, 'String');
     id    = get(handles.displaytype, 'Value');
-
-    if id < 1 || id > length(handles.plot_info)
+    if id < 1 || id > length(handles.plots)
         error('Bug: Got invalid display type ID');
     end
 
-    info = handles.plot_info{id};
+    info = handles.plots{id};
 
-    % Reset data so we don't see "random" junk when switching displays
-    switch handles.plot_info{id}.name
-        case 'Time (XY)'
-            handles.plot.XData = zeros(1, handles.num_samples);
-
-        otherwise
-            handles.plot.XData = handles.plot_info{id}.x;
+    for n = 1:length(handles.plots)
+        if n == id
+            for l = 1:length(handles.plots{n}.lines)
+                handles.plots{n}.lines(l).Visible = 'on';
+            end
+        else
+           for l = 1:length(handles.plots{n}.lines)
+                handles.plots{n}.lines(l).Visible = 'off';
+           end
+        end
     end
 
-    handles.plot.YData = zeros(1, handles.num_samples);
+    % Reset data so we don't see "random" junk when switching displays
+    switch handles.plots{id}.name
+        case { 'FFT (dB)', 'FFT (linear)' }
+            x = linspace(double(info.xmin), double(info.xmax), handles.num_samples);
+            handles.plots{id}.lines(1).XData = x;
+            handles.plots{id}.lines(1).YData = zeros(1, handles.num_samples);
 
-    % We don't want the figure axes to be changing while data is streaming
-    axis(handles.axes1, 'manual');
+        case 'Time (2-Channel)'
+            x = linspace(double(info.xmin), double(info.xmax), handles.num_samples);
 
+            handles.plots{id}.lines(1).XData = x;
+            handles.plots{id}.lines(1).YData = zeros(1, handles.num_samples);
+
+            handles.plots{id}.lines(2).XData = x;
+            handles.plots{id}.lines(2).YData = zeros(1, handles.num_samples);
+
+        case 'Time (XY)'
+            handles.plots{id}.lines(1).XData = zeros(1, handles.num_samples);
+            handles.plots{id}.lines(1).YData = zeros(1, handles.num_samples);
+    end
+
+    % Update the axes limits for this plot
     handles.axes1.XLim = [info.xmin info.xmax];
     handles.axes1.YLim = [info.ymin info.ymax];
+    axis(handles.axes1, 'manual');
 
-
+    % Update the plot label
     set(handles.xlabel, 'String', info.xlabel);
 end
 
@@ -102,9 +121,11 @@ function [plot_info] = init_plot_type(handles, type)
 
     plot_info.name = type;
 
+    blue = [0 0 1];
+    red  = [1 0 0];
+
     switch type
         case 'FFT (dB)'
-            plot_info.marker = 'b-';
             plot_info.xlabel = 'Frequency (MHz)';
 
             plot_info.xmin = (Fc - Fs/2);
@@ -112,14 +133,14 @@ function [plot_info] = init_plot_type(handles, type)
             plot_info.ymin = 0;
             plot_info.ymax = 140;
 
-            plot_info.x = linspace(double(plot_info.xmin), ...
-                                   double(plot_info.xmax), ...
-                                   handles.num_samples);
-
-            plot_info.y = zeros(1, handles.num_samples);
+            x = linspace(double(plot_info.xmin), double(plot_info.xmax), handles.num_samples);
+            y = zeros(1, handles.num_samples);
+            plot_info.lines(1) = line(x, y);
+            plot_info.lines(1).Color = blue;
+            plot_info.lines(1).Marker = 'none';
+            plot_info.lines(1).LineStyle = '-';
 
         case 'FFT (linear)'
-            plot_info.marker = 'b-';
             plot_info.xlabel = 'Frequency (MHz)';
 
             plot_info.xmin = (Fc - Fs/2);
@@ -127,26 +148,34 @@ function [plot_info] = init_plot_type(handles, type)
             plot_info.ymin = 0;
             plot_info.ymax = 1e6;
 
-            plot_info.x = linspace(double(plot_info.xmin), ...
-                                   double(plot_info.xmax), ...
-                                   handles.num_samples);
+            x = linspace(double(plot_info.xmin), double(plot_info.xmax), handles.num_samples);
+            y = zeros(1, handles.num_samples);
 
-            plot_info.y = zeros(1, handles.num_samples);
+            plot_info.lines(1) = line(x, y);
+            plot_info.lines(1).Color = blue;
+            plot_info.lines(1).Marker = 'none';
+            plot_info.lines(1).LineStyle = '-';
 
         case 'Time (2-Channel)'
-            plot_info.marker = 'b-';
             plot_info.xlabel = 'Time (s)';
 
             plot_info.xmin = 0;
             plot_info.xmax = (handles.num_samples - 1) / Fs;
             plot_info.ymin = -2500;
-            plot_info.ymax = -2500;
+            plot_info.ymax = 2500;
 
-            plot_info.x = linspace(double(plot_info.xmin), ...
-                                   double(plot_info.xmax), ...
-                                   handles.num_samples);
+            x = linspace(double(plot_info.xmin), double(plot_info.xmax), handles.num_samples);
+            y = zeros(1, handles.num_samples);
 
-            plot_info.y = zeros(1, handles.num_samples);
+            plot_info.lines(1) = line(x, y);
+            plot_info.lines(1).Color = blue;
+            plot_info.lines(1).Marker = 'none';
+            plot_info.lines(1).LineStyle = '-';
+
+            plot_info.lines(2) = line(x, y);
+            plot_info.lines(2).Color = red;
+            plot_info.lines(2).Marker = 'none';
+            plot_info.lines(2).LineStyle = '-';
 
         case 'Time (XY)'
             plot_info.marker = 'b-';
@@ -157,8 +186,19 @@ function [plot_info] = init_plot_type(handles, type)
             plot_info.ymin = -2500;
             plot_info.ymax = 2500;
 
-            plot_info.x = zeros(1, handles.num_samples);
-            plot_info.y = zeros(1, handles.num_samples);
+            x = zeros(1, handles.num_samples);
+            y = zeros(1, handles.num_samples);
+
+            plot_info.lines(1) = line(x, y);
+            plot_info.lines(1).Color = blue;
+            plot_info.lines(1).Marker = '.';
+            plot_info.lines(1).LineStyle = 'none';
+            plot_info.lines(1).Visible = 'off';
+
+            plot_info.lines(2) = line(x, y);
+            plot_info.lines(2).Color = red;
+            plot_info.lines(2).Marker = '.';
+            plot_info.lines(2).Visible = 'off';
 
         otherwise
             error('Invalid plot type encountered');
@@ -200,13 +240,10 @@ function bladeRF_fft_OpeningFcn(hObject, eventdata, handles, varargin)
     type_strs = get(handles.displaytype, 'String');
     curr_disp = get(handles.displaytype, 'Value');
 
-    handles.plot_info = cell(1, length(type_strs));
-    for n = 1:length(handles.plot_info)
-        handles.plot_info{n} = init_plot_type(handles, type_strs{n});
+    handles.plots = cell(1, length(type_strs));
+    for n = 1:length(handles.plots)
+        handles.plots{n} = init_plot_type(handles, type_strs{n});
     end
-
-    handles.plot = plot(handles.plot_info{curr_disp}.x, ...
-                        handles.plot_info{curr_disp}.y);
 
     update_plot_config(handles);
 
@@ -254,20 +291,21 @@ function actionbutton_Callback(hObject, eventdata, handles)
                     update = 0;
                     id = get(handles.displaytype, 'Value');
 
-                    switch handles.plot_info{id}.name
+                    switch handles.plots{id}.name
                         case 'FFT (dB)'
-                            handles.plot.YData = 20*log10(abs(fftshift(fft(samples))));
+                            handles.plots{id}.lines(1).YData = 20*log10(abs(fftshift(fft(samples))));
 
                         case 'FFT (linear)'
-                            handles.plot.YData = abs(fftshift(fft(samples)));
+                            handles.plots{id}.lines(1).YData = abs(fftshift(fft(samples)));
 
                         case 'Time (2-Channel)'
-                            handles.plot.XData = zeros(1, num_samples);
-                            handles.plot.YData = zeros(1, num_samples);
+                            handles.plots{id}.lines(1).YData = real(samples);
+                            handles.plots{id}.lines(2).YData = imag(samples);
+
 
                         case 'Time (XY)'
-                            handles.plot.XData = real(samples);
-                            handles.plot.YData = imag(samples);
+                            handles.plots{id}.lines(1).XData = real(samples);
+                            handles.plots{id}.lines(1).YData = imag(samples);
 
                         otherwise
                             error('Invalid plot selection encountered');
