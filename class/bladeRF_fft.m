@@ -64,12 +64,9 @@ function set_lnagain_selection(lnagain_widget, value)
     end
 end
 
-function update_plot(handles)
+function update_plot_config(handles)
     names = get(handles.displaytype, 'String');
-    id    = get(handles.displaytype, 'Value'); 
-
-    fprintf('Printing plot info for %s:\n', names{id});
-    handles.plot_info{id};
+    id    = get(handles.displaytype, 'Value');
 
     if id < 1 || id > length(handles.plot_info)
         error('Bug: Got invalid display type ID');
@@ -77,8 +74,13 @@ function update_plot(handles)
 
     info = handles.plot_info{id};
 
-    axes(handles.axis1);
-    axis([info.xmin info.xmax info.ymin info.ymax]);
+    % We don't want the figure axes to be changing while data is streaming
+    axis(handles.axes1, 'manual');
+
+    handles.axes1.XLim = [info.xmin info.xmax];
+    handles.axes1.YLim = [info.ymin info.ymax];
+
+
     set(handles.xlabel, 'String', info.xlabel);
 end
 
@@ -181,7 +183,7 @@ function bladeRF_fft_OpeningFcn(hObject, eventdata, handles, varargin)
     set(handles.corr_phase, 'String', num2str(handles.bladerf.rx.corrections.phase)) ;
 
     % Number of samples we'll read from the device at each iteraion
-    handles.num_samples = 4096
+    handles.num_samples = 4096;
 
     %  Create plot information for each type of lot
     type_strs = get(handles.displaytype, 'String');
@@ -195,6 +197,8 @@ function bladeRF_fft_OpeningFcn(hObject, eventdata, handles, varargin)
     handles.plot = plot(handles.plot_info{curr_disp}.x, ...
                         handles.plot_info{curr_disp}.y);
 
+    update_plot_config(handles);
+
     % Update handles structure
     guidata(hObject, handles);
 end
@@ -204,7 +208,7 @@ function varargout = bladeRF_fft_OutputFcn(hObject, eventdata, handles)
 end
 
 function displaytype_Callback(hObject, eventdata, handles)
-    update_plot(handles);
+    update_plot_config(handles);
 end
 
 function displaytype_CreateFcn(hObject, eventdata, handles)
@@ -223,13 +227,9 @@ function actionbutton_Callback(hObject, eventdata, handles)
 
             start = cputime;
             update = 1;
+            framerate = 30;
 
             samples = zeros(1, handles.num_samples);
-
-            % FIXME: Why didn't the earlier axis call take care of this?
-            Fc = handles.bladerf.rx.frequency;
-            Fs = handles.bladerf.rx.samplerate;
-            axis([(Fc-Fs/2) (Fc+Fs/2) 0 140]);
 
             while strcmp(get(hObject,'String'), 'Stop') == true
 
@@ -248,13 +248,13 @@ function actionbutton_Callback(hObject, eventdata, handles)
                             handles.plot.YData = 20*log10(abs(fftshift(fft(samples))));
                         otherwise
                             ;
-                    end 
+                    end
 
                     drawnow;
                     tic;
                 else
                     t = toc;
-                    update = (t > 0.035);
+                    update = (t > (1/framerate));
                 end
             end
 
