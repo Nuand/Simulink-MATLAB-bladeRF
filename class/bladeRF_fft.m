@@ -108,7 +108,6 @@ function update_plot_config(handles)
     % Update the axes limits for this plot
     handles.axes1.XLim = [info.xmin info.xmax];
     handles.axes1.YLim = [info.ymin info.ymax];
-    axis(handles.axes1, 'manual');
 
     % Update the plot label
     set(handles.xlabel, 'String', info.xlabel);
