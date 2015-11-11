@@ -70,8 +70,8 @@ classdef bladeRF < handle
                     case 'win64'
                         error ('bladeRF:constructor', 'win64 not supported' ) ;
                     case 'glnxa64'
-                        %[notfound, warnings] = loadlibrary('libbladeRF', @libbladeRF_proto, 'notempdir') ;
-                        [notfound, warnings] = loadlibrary('libbladeRF', '/tmp/libbladeRF.h', 'notempdir') ;
+                        [notfound, warnings] = loadlibrary('libbladeRF', @libbladeRF_proto, 'notempdir') ;
+                        %[notfound, warnings] = loadlibrary('libbladeRF', '/tmp/libbladeRF.h', 'notempdir') ;
                     case 'maci64'
                         [notfound, warnings] = loadlibrary('libbladeRF.dylib', @libbladeRF_proto, 'notempdir') ;
                     otherwise
