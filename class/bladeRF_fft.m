@@ -76,10 +76,12 @@ function update_plot_config(handles)
         if n == id
             for l = 1:length(handles.plots{n}.lines)
                 handles.plots{n}.lines(l).Visible = 'on';
+                %fprintf('plot %s ch %d = %s\n', handles.plots{n}.name, l, handles.plots{n}.lines(l).Visible);
             end
         else
            for l = 1:length(handles.plots{n}.lines)
                 handles.plots{n}.lines(l).Visible = 'off';
+                %fprintf('plot %s ch %d = %s\n', handles.plots{n}.name, l, handles.plots{n}.lines(l).Visible);
            end
         end
     end
@@ -193,11 +195,6 @@ function [plot_info] = init_plot_type(handles, type)
             plot_info.lines(1).Marker = '.';
             plot_info.lines(1).LineStyle = 'none';
             plot_info.lines(1).Visible = 'off';
-
-            plot_info.lines(2) = line(x, y);
-            plot_info.lines(2).Color = red;
-            plot_info.lines(2).Marker = '.';
-            plot_info.lines(2).Visible = 'off';
 
         otherwise
             error('Invalid plot type encountered');
@@ -411,7 +408,7 @@ function corr_dc_i_Callback(hObject, eventdata, handles)
         val = handles.bladerf.rx.corrections.dc_i;
     end
 
-    fprintf('GUI request to set I DC correction to: %f\n', val)
+    %fprintf('GUI request to set I DC correction to: %f\n', val)
     handles.bladerf.rx.corrections.dc_i = val;
 
     set(hObject, 'String', num2str(val));
@@ -436,7 +433,7 @@ function corr_dc_q_Callback(hObject, eventdata, handles)
         val = handles.bladerf.rx.corrections.dc_q;
     end
 
-    fprintf('GUI request to set IQ DC correction to: %f\n', val)
+    %fprintf('GUI request to set IQ DC correction to: %f\n', val)
     handles.bladerf.rx.corrections.dc_q = val;
 
     set(hObject, 'String', num2str(val));
@@ -449,7 +446,7 @@ function corr_gain_Callback(hObject, eventdata, handles)
         val = handles.bladerf.rx.corrections.gain;
     end
 
-    fprintf('GUI request to set IQ gain correction to: %f\n', val)
+    %fprintf('GUI request to set IQ gain correction to: %f\n', val)
     handles.bladerf.rx.corrections.gain = val;
 
     set(hObject, 'String', num2str(val));
