@@ -64,77 +64,92 @@ function set_lnagain_selection(lnagain_widget, value)
     end
 end
 
-function [x, y, p] = new_plot(handles, type)
-    linkdata off;
+function update_plot(handles)
+    names = get(handles.displaytype, 'String');
+    id    = get(handles.displaytype, 'Value'); 
 
-    fprintf('Request to set plot type to: %s\n', type);
+    fprintf('Printing plot info for %s:\n', names{id});
+    handles.plot_info{id};
 
-    % We need the center frequency and sample rate to derive X values
+    if id < 1 || id > length(handles.plot_info)
+        error('Bug: Got invalid display type ID');
+    end
+
+    info = handles.plot_info{id};
+
+    axes(handles.axis1);
+    axis([info.xmin info.xmax info.ymin info.ymax]);
+    set(handles.xlabel, 'String', info.xlabel);
+end
+
+function [plot_info] = init_plot_type(handles, type)
+
     Fc = handles.bladerf.rx.frequency;
     Fs = handles.bladerf.rx.samplerate;
 
-    % Reset sample values
-    xlen = length(handles.plot_data.x);
-    ylen = length(handles.plot_data.y);
+    plot_info.name = type;
 
-    x = zeros(1, xlen);
-    y = zeros(1, ylen);
-
-    % Configure plot properties based upon type
     switch type
         case 'FFT (dB)'
-            marker = 'b-';
-            set(handles.xlabel, 'String', 'Frequency (MHz)');
+            plot_info.marker = 'b-';
+            plot_info.xlabel = 'Frequency (MHz)';
 
-            xmin = (Fc - Fs/2);
-            xmax = (Fc + Fs/2);
-            ymin = 0;
-            ymax = 140;
+            plot_info.xmin = (Fc - Fs/2);
+            plot_info.xmax = (Fc + Fs/2);
+            plot_info.ymin = 0;
+            plot_info.ymax = 140;
 
-            x = linspace(double(xmin), double(xmax), xlen);
+            plot_info.x = linspace(double(plot_info.xmin), ...
+                                   double(plot_info.xmax), ...
+                                   handles.num_samples);
+
+            plot_info.y = zeros(1, handles.num_samples);
 
         case 'FFT (linear)'
-            marker = 'b-';
-            set(handles.xlabel, 'String', 'Frequency (MHz)');
+            plot_info.marker = 'b-';
+            plot_info.xlabel = 'Frequency (MHz)';
 
-            xmin = (Fc - Fs/2);
-            xmax = (Fc + Fs/2);
-            ymin = 0;
-            ymax = 10e6;
+            plot_info.xmin = (Fc - Fs/2);
+            plot_info.xmax = (Fc + Fs/2);
+            plot_info.ymin = 0;
+            plot_info.ymax = 10e6;
 
-            x = linspace(double(xmin), double(xmax), xlen);
+            plot_info.x = linspace(double(plot_info.xmin), ...
+                                   double(plot_info.xmax), ...
+                                   handles.num_samples);
+
+            plot_info.y = zeros(1, handles.num_samples);
 
         case 'Time (2-Channel)'
-            %set(handles.axes1, 'XScale', 'linear') ;
-            marker = 'b-';
-            set(handles.xlabel, 'String', 'Time (s)');
+            plot_info.marker = 'b-';
+            plot_info.xlabel = 'Time (s)';
 
-            xmin = 0;
-            xmax = (length(handles.plot_data(y)) - 1) / Fs;
-            ymin = -2500;
-            ymax = -2500;
+            plot_info.xmin = 0;
+            plot_info.xmax = (handles.num_samples - 1) / Fs;
+            plot_info.ymin = -2500;
+            plot_info.ymax = -2500;
 
-            x = 0;
+            plot_info.x = linspace(double(plot_info.xmin), ...
+                                   double(plot_info.xmax), ...
+                                   handles.num_samples);
+
+            plot_info.y = zeros(1, handles.num_samples);
 
         case 'Time (XY)'
-            %set(handles.axes1,'XScale','linear') ;
-            marker = 'b-';
-            set(handles.xlabel,'String', 'X (counts)');
+            plot_info.marker = 'b-';
+            plot_info.xlabel = 'X (counts)';
 
-            xmin = -2500;
-            xmax = 2500;
-            ymin = -2500;
-            ymax = 2500;
+            plot_info.xmin = -2500;
+            plot_info.xmax = 2500;
+            plot_info.ymin = -2500;
+            plot_info.ymax = 2500;
 
-            handles.plot_data.x(:) = 0;
+            plot_info.x = zeros(1, handles.num_samples);
+            plot_info.y = zeros(1, handles.num_samples);
 
         otherwise
             error('Invalid plot type encountered');
-    end;
-
-    % Plot the initial values
-    p = plot(x, y, marker);
-    axis([xmin, xmax, ymin, ymax]);
+    end
 end
 
 function bladeRF_fft_OpeningFcn(hObject, eventdata, handles, varargin)
@@ -144,9 +159,6 @@ function bladeRF_fft_OpeningFcn(hObject, eventdata, handles, varargin)
     % UIWAIT makes bladeRF_fft wait for user response (see UIRESUME)
     % uiwait(handles.figure1);
     handles.bladerf = bladeRF('*:instance=0') ;
-
-    % Running flag
-    handles.running = false ;
 
     % Set text labels
     set(handles.vga1, 'String', num2str(handles.bladerf.rx.vga1)) ;
@@ -168,14 +180,20 @@ function bladeRF_fft_OpeningFcn(hObject, eventdata, handles, varargin)
     set(handles.corr_gain, 'String', num2str(handles.bladerf.rx.corrections.gain)) ;
     set(handles.corr_phase, 'String', num2str(handles.bladerf.rx.corrections.phase)) ;
 
-    % Initialize plot for default display mode
-    handles.plot_data.x = zeros(1, 4096);
-    handles.plot_data.y = zeros(1, 4096);
+    % Number of samples we'll read from the device at each iteraion
+    handles.num_samples = 4096
 
-    display_types = get(handles.displaytype, 'String');
-    default_type  = get(handles.displaytype, 'Value');
-    [handles.plot_data.x, handles.plot_data.y, handles.plot] = ...
-        new_plot(handles, display_types{default_type});
+    %  Create plot information for each type of lot
+    type_strs = get(handles.displaytype, 'String');
+    curr_disp = get(handles.displaytype, 'Value');
+
+    handles.plot_info = cell(1, length(type_strs));
+    for n = 1:length(handles.plot_info)
+        handles.plot_info{n} = init_plot_type(handles, type_strs{n});
+    end
+
+    handles.plot = plot(handles.plot_info{curr_disp}.x, ...
+                        handles.plot_info{curr_disp}.y);
 
     % Update handles structure
     guidata(hObject, handles);
@@ -186,10 +204,7 @@ function varargout = bladeRF_fft_OutputFcn(hObject, eventdata, handles)
 end
 
 function displaytype_Callback(hObject, eventdata, handles)
-    items = get(hObject,'String') ;
-    index = get(hObject,'Value') ;
-    [handles.plot_data.x, handles.plot_data.y, handles.plot] = ...
-        new_plot(handles, items{index});
+    update_plot(handles);
 end
 
 function displaytype_CreateFcn(hObject, eventdata, handles)
@@ -203,31 +218,50 @@ function actionbutton_Callback(hObject, eventdata, handles)
     switch action
         case 'Start'
             set(hObject,'String','Stop') ;
-            handles.running = true ;
             handles.bladerf.rx.start
             guidata(hObject, handles);
 
-            num_samples = length(handles.plot_data.y);
+            start = cputime;
+            update = 1;
 
-            % Why can't I check handles.running here?
-            % while handles.running == true
+            samples = zeros(1, handles.num_samples);
+
+            % FIXME: Why didn't the earlier axis call take care of this?
+            Fc = handles.bladerf.rx.frequency;
+            Fs = handles.bladerf.rx.samplerate;
+            axis([(Fc-Fs/2) (Fc+Fs/2) 0 140]);
+
             while strcmp(get(hObject,'String'), 'Stop') == true
-                [handles.plot_data.y(:), actual, underrun] =...
-                    handles.bladerf.rx.receive(num_samples, 5000, 0);
 
-                handles.plot.YData(:) = abs(handles.plot_data.y);
-                guidata(hObject, handles) ;
-                %refreshdata(handles.plot);
+                [samples(:), actual_count, underrun] = ...
+                    handles.bladerf.rx.receive(handles.num_samples, 5000, 0);
 
                 if underrun
-                    disp 'Underrun'
+                    now = cputime;
+                    fprintf('Underrun @ t=%f\n', cputime - start);
+                elseif update
+                    update = 0;
+                    id = get(handles.displaytype, 'Value');
+
+                    switch handles.plot_info{id}.name
+                        case 'FFT (dB)'
+                            handles.plot.YData = 20*log10(abs(fftshift(fft(samples))));
+                        otherwise
+                            ;
+                    end 
+
+                    drawnow;
+                    tic;
+                else
+                    t = toc;
+                    update = (t > 0.035);
                 end
             end
+
             handles.bladerf.rx.stop
 
         case 'Stop'
             set(hObject,'String','Start') ;
-            handles.running = false ;
             guidata(hObject, handles);
 
         otherwise
