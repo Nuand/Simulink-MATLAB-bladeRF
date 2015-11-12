@@ -64,7 +64,7 @@ function set_lnagain_selection(lnagain_widget, value)
     end
 end
 
-function update_plot_config(handles)
+function update_plot_config(hObject, handles)
     id    = get(handles.displaytype, 'Value');
     if id < 1 || id > length(handles.plots)
         error('Bug: Got invalid display type ID');
@@ -86,25 +86,30 @@ function update_plot_config(handles)
         end
     end
 
+    num_samples = getappdata(hObject, 'num_samples');
+    if isempty(num_samples)
+        error('Application property "num_samples" is unexpectedly empty.');
+    end
+
     % Reset data so we don't see "random" junk when switching displays
     switch handles.plots{id}.name
         case { 'FFT (dB)', 'FFT (linear)' }
-            x = linspace(double(info.xmin), double(info.xmax), handles.num_samples);
+            x = linspace(double(info.xmin), double(info.xmax), num_samples);
             handles.plots{id}.lines(1).XData = x;
-            handles.plots{id}.lines(1).YData = zeros(1, handles.num_samples);
+            handles.plots{id}.lines(1).YData = zeros(1, num_samples);
 
         case 'Time (2-Channel)'
-            x = linspace(double(info.xmin), double(info.xmax), handles.num_samples);
+            x = linspace(double(info.xmin), double(info.xmax), num_samples);
 
             handles.plots{id}.lines(1).XData = x;
-            handles.plots{id}.lines(1).YData = zeros(1, handles.num_samples);
+            handles.plots{id}.lines(1).YData = zeros(1, num_samples);
 
             handles.plots{id}.lines(2).XData = x;
-            handles.plots{id}.lines(2).YData = zeros(1, handles.num_samples);
+            handles.plots{id}.lines(2).YData = zeros(1, num_samples);
 
         case 'Time (XY)'
-            handles.plots{id}.lines(1).XData = zeros(1, handles.num_samples);
-            handles.plots{id}.lines(1).YData = zeros(1, handles.num_samples);
+            handles.plots{id}.lines(1).XData = zeros(1, num_samples);
+            handles.plots{id}.lines(1).YData = zeros(1, num_samples);
     end
 
     % Update the axes limits for this plot
@@ -115,7 +120,7 @@ function update_plot_config(handles)
     set(handles.xlabel, 'String', info.xlabel);
 end
 
-function [plot_info] = init_plot_type(handles, type)
+function [plot_info] = init_plot_type(hObject, handles, type)
 
     Fc = handles.bladerf.rx.frequency;
     Fs = handles.bladerf.rx.samplerate;
@@ -124,6 +129,11 @@ function [plot_info] = init_plot_type(handles, type)
 
     blue = [0 0 1];
     red  = [1 0 0];
+
+    num_samples = getappdata(hObject, 'num_samples');
+    if isempty(num_samples)
+        error('Application property "num_samples" is unexpectedly empty.');
+    end
 
     switch type
         case 'FFT (dB)'
@@ -134,8 +144,8 @@ function [plot_info] = init_plot_type(handles, type)
             plot_info.ymin = 0;
             plot_info.ymax = 140;
 
-            x = linspace(double(plot_info.xmin), double(plot_info.xmax), handles.num_samples);
-            y = zeros(1, handles.num_samples);
+            x = linspace(double(plot_info.xmin), double(plot_info.xmax), num_samples);
+            y = zeros(1, num_samples);
             plot_info.lines(1) = line(x, y);
             plot_info.lines(1).Color = blue;
             plot_info.lines(1).Marker = 'none';
@@ -149,8 +159,8 @@ function [plot_info] = init_plot_type(handles, type)
             plot_info.ymin = 0;
             plot_info.ymax = 1e6;
 
-            x = linspace(double(plot_info.xmin), double(plot_info.xmax), handles.num_samples);
-            y = zeros(1, handles.num_samples);
+            x = linspace(double(plot_info.xmin), double(plot_info.xmax), num_samples);
+            y = zeros(1, num_samples);
 
             plot_info.lines(1) = line(x, y);
             plot_info.lines(1).Color = blue;
@@ -161,12 +171,12 @@ function [plot_info] = init_plot_type(handles, type)
             plot_info.xlabel = 'Time (s)';
 
             plot_info.xmin = 0;
-            plot_info.xmax = (handles.num_samples - 1) / Fs;
+            plot_info.xmax = (num_samples - 1) / Fs;
             plot_info.ymin = -2500;
             plot_info.ymax = 2500;
 
-            x = linspace(double(plot_info.xmin), double(plot_info.xmax), handles.num_samples);
-            y = zeros(1, handles.num_samples);
+            x = linspace(double(plot_info.xmin), double(plot_info.xmax), num_samples);
+            y = zeros(1, num_samples);
 
             plot_info.lines(1) = line(x, y);
             plot_info.lines(1).Color = blue;
@@ -187,8 +197,8 @@ function [plot_info] = init_plot_type(handles, type)
             plot_info.ymin = -2500;
             plot_info.ymax = 2500;
 
-            x = zeros(1, handles.num_samples);
-            y = zeros(1, handles.num_samples);
+            x = zeros(1, num_samples);
+            y = zeros(1, num_samples);
 
             plot_info.lines(1) = line(x, y);
             plot_info.lines(1).Color = blue;
@@ -229,18 +239,21 @@ function bladeRF_fft_OpeningFcn(hObject, ~, handles, varargin)
     set(handles.corr_gain, 'String', num2str(handles.bladerf.rx.corrections.gain)) ;
     set(handles.corr_phase, 'String', num2str(handles.bladerf.rx.corrections.phase)) ;
 
+    % "Running" flag
+    setappdata(hObject.Parent, 'run', 0);
+
     % Number of samples we'll read from the device at each iteraion
-    handles.num_samples = 4096;
+    setappdata(hObject.Parent, 'num_samples', 4096);
 
     %  Create plot information for each type of lot
     type_strs = get(handles.displaytype, 'String');
 
     handles.plots = cell(1, length(type_strs));
     for n = 1:length(handles.plots)
-        handles.plots{n} = init_plot_type(handles, type_strs{n});
+        handles.plots{n} = init_plot_type(hObject.Parent, handles, type_strs{n});
     end
 
-    update_plot_config(handles);
+    update_plot_config(hObject.Parent, handles);
 
     % Update handles structure
     guidata(hObject, handles);
@@ -250,8 +263,8 @@ function varargout = bladeRF_fft_OutputFcn(~, ~, handles)
     varargout{1} = handles.output;
 end
 
-function displaytype_Callback(~, ~, handles)
-    update_plot_config(handles);
+function displaytype_Callback(hObject, ~, handles)
+    update_plot_config(hObject.Parent.Parent, handles);
 end
 
 function displaytype_CreateFcn(hObject, ~, ~)
@@ -271,11 +284,18 @@ function actionbutton_Callback(hObject, ~, handles)
             start = cputime;
             update = 1;
             framerate = 30;
-            num_samples = handles.num_samples;
+
+            num_samples = getappdata(hObject.Parent.Parent, 'num_samples');
+            if isempty(num_samples)
+                error('Application property "num_samples" is unexpectedly empty.');
+            end
 
             samples = zeros(1, num_samples);
 
-            while strcmp(get(hObject,'String'), 'Stop') == true
+            run = 1;
+            setappdata(hObject.Parent.Parent, 'run', 1);
+
+            while run == 1
 
                 [samples(:), ~, underrun] = ...
                     handles.bladerf.rx.receive(num_samples, 5000, 0);
@@ -312,11 +332,18 @@ function actionbutton_Callback(hObject, ~, handles)
                     t = toc;
                     update = (t > (1/framerate));
                 end
+
+                run = getappdata(hObject.Parent.Parent, 'run');
             end
 
-            handles.bladerf.rx.stop
+            handles.bladerf.rx.stop;
+            figHandle = getappdata(hObject.Parent.Parent, 'ready_to_delete');
+            if ~isempty(figHandle)
+                delete(figHandle);
+            end
 
         case 'Stop'
+            setappdata(hObject.Parent.Parent, 'run', 0);
             set(hObject,'String','Start') ;
             guidata(hObject, handles);
 
@@ -378,10 +405,6 @@ function vga2_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         set(hObject,'BackgroundColor','white');
     end
-end
-
-function figure1_DeleteFcn(~, ~, ~)
-
 end
 
 function bandwidth_Callback(hObject, ~, handles)
@@ -547,4 +570,17 @@ function devicelist_CreateFcn(hObject, ~, ~)
         list{idx} = strcat(backend, ':serial=', devs(idx).serial) ;
     end
     set(hObject, 'String', list) ;
+end
+
+function figure1_CloseRequestFcn(hObject, ~, handles)
+    running = getappdata(hObject.Parent, 'run');
+    if running == 1
+        % Our hackish receive loop is still running. Flag it to shut
+        % down and have it take care of the final delete().
+        setappdata(hObject.Parent, 'run', 0);
+        setappdata(hObject.Parent, 'ready_to_delete', hObject)
+    else
+        % We can shut down now.
+        delete(hObject);
+    end
 end
