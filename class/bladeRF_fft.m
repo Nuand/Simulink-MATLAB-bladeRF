@@ -336,8 +336,8 @@ function actionbutton_Callback(hObject, ~, handles)
             framerate = 30;
 
             num_samples = get_num_samples(hObject);
+            win = blackmanharris(num_samples).';
             plots = get_plots(hObject);
-
             samples = zeros(1, num_samples);
 
             run = 1;
@@ -356,10 +356,10 @@ function actionbutton_Callback(hObject, ~, handles)
 
                     switch plots{id}.name
                         case 'FFT (dB)'
-                            plots{id}.lines(1).YData = 20*log10(abs(fftshift(fft(samples))));
+                            plots{id}.lines(1).YData = 20*log10(abs(fftshift(fft(samples .* win))));
 
                         case 'FFT (linear)'
-                            plots{id}.lines(1).YData = abs(fftshift(fft(samples)));
+                            plots{id}.lines(1).YData = abs(fftshift(fft(samples .* win)));
 
                         case 'Time (2-Channel)'
                             plots{id}.lines(1).YData = real(samples);
