@@ -303,6 +303,7 @@ function bladeRF_fft_OpeningFcn(hObject, ~, handles, varargin)
 
     handles.bladerf.rx.config.num_buffers = 64;
     handles.bladerf.rx.config.buffer_size = 16384;
+    handles.bladerf.rx.config.timeout = 5000;
 
     handles.num_buffers.String = num2str(handles.bladerf.rx.config.num_buffers);
     handles.buffer_size.String = num2str(handles.bladerf.rx.config.buffer_size);
