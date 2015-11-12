@@ -164,8 +164,8 @@ function update_plot_axes(hObject, handles)
             case 'FFT (dB)'
                 plots{id}.xmin = (Fc - Fs/2);
                 plots{id}.xmax = (Fc + Fs/2);
-                plots{id}.ymin = 0;
-                plots{id}.ymax = 140;
+                plots{id}.ymin = -100;
+                plots{id}.ymax = 0;
 
                 % Ensure the X values are updated, as these are not updated every read
                 if id == handles.displaytype.Value
@@ -177,7 +177,7 @@ function update_plot_axes(hObject, handles)
                 plots{id}.xmin = (Fc - Fs/2);
                 plots{id}.xmax = (Fc + Fs/2);
                 plots{id}.ymin = 0;
-                plots{id}.ymax = 1e6;
+                plots{id}.ymax = 1;
 
                 % Ensure the X values are updated, as these are not updated every read
                 if id == handles.displaytype.Value
@@ -188,14 +188,14 @@ function update_plot_axes(hObject, handles)
             case 'Time (2-Channel)'
                 plots{id}.xmin = 0;
                 plots{id}.xmax = (num_samples - 1) / Fs;
-                plots{id}.ymin = -2500;
-                plots{id}.ymax = 2500;
+                plots{id}.ymin = -1.2;
+                plots{id}.ymax =  1.2;
 
             case 'Time (XY)'
-                plots{id}.xmin = -2500;
-                plots{id}.xmax = 2500;
-                plots{id}.ymin = -2500;
-                plots{id}.ymax = 2500;
+                plots{id}.xmin = -1.2;
+                plots{id}.xmax =  1.2;
+                plots{id}.ymin = -1.2;
+                plots{id}.ymax =  1.2;
 
             otherwise
                 error('Invalid plot type encountered');
@@ -336,7 +336,13 @@ function actionbutton_Callback(hObject, ~, handles)
             framerate = 30;
 
             num_samples = get_num_samples(hObject);
+
+            % We'll window our samples. However, we want to normalize
+            % this to account for some of its inherent loss.
             win = blackmanharris(num_samples).';
+            win_norm = (1 / sum(abs(win) ./ num_samples) .* win);
+            win_norm = win_norm ./ 4096;
+
             plots = get_plots(hObject);
             samples = zeros(1, num_samples);
 
@@ -356,10 +362,10 @@ function actionbutton_Callback(hObject, ~, handles)
 
                     switch plots{id}.name
                         case 'FFT (dB)'
-                            plots{id}.lines(1).YData = 20*log10(abs(fftshift(fft(samples .* win))));
+                            plots{id}.lines(1).YData = 20*log10(abs(fftshift(fft(samples .* win_norm))));
 
                         case 'FFT (linear)'
-                            plots{id}.lines(1).YData = abs(fftshift(fft(samples .* win)));
+                            plots{id}.lines(1).YData = abs(fftshift(fft(samples .* win_norm)));
 
                         case 'Time (2-Channel)'
                             plots{id}.lines(1).YData = real(samples);
