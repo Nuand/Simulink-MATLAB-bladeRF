@@ -65,51 +65,50 @@ function set_lnagain_selection(lnagain_widget, value)
 end
 
 function update_plot_config(hObject, handles)
-    id    = get(handles.displaytype, 'Value');
-    if id < 1 || id > length(handles.plots)
+    plots = get_plots(hObject);
+
+    id = get(handles.displaytype, 'Value');
+    if id < 1 || id > length(plots)
         error('Bug: Got invalid display type ID');
     end
 
-    info = handles.plots{id};
+    info = plots{id};
 
-    for n = 1:length(handles.plots)
+    for n = 1:length(plots)
         if n == id
-            for l = 1:length(handles.plots{n}.lines)
-                handles.plots{n}.lines(l).Visible = 'on';
-                %fprintf('plot %s ch %d = %s\n', handles.plots{n}.name, l, handles.plots{n}.lines(l).Visible);
+            for l = 1:length(plots{n}.lines)
+                plots{n}.lines(l).Visible = 'on';
+                %fprintf('plot %s ch %d = %s\n', plots{n}.name, l, plots{n}.lines(l).Visible);
             end
         else
-           for l = 1:length(handles.plots{n}.lines)
-                handles.plots{n}.lines(l).Visible = 'off';
-                %fprintf('plot %s ch %d = %s\n', handles.plots{n}.name, l, handles.plots{n}.lines(l).Visible);
+           for l = 1:length(plots{n}.lines)
+                plots{n}.lines(l).Visible = 'off';
+                %fprintf('plot %s ch %d = %s\n', plots{n}.name, l, plots{n}.lines(l).Visible);
            end
         end
     end
 
-    num_samples = getappdata(hObject, 'num_samples');
-    if isempty(num_samples)
-        error('Application property "num_samples" is unexpectedly empty.');
-    end
+    num_samples = get_num_samples(hObject);
 
     % Reset data so we don't see "random" junk when switching displays
-    switch handles.plots{id}.name
+    switch plots{id}.name
         case { 'FFT (dB)', 'FFT (linear)' }
             x = linspace(double(info.xmin), double(info.xmax), num_samples);
-            handles.plots{id}.lines(1).XData = x;
-            handles.plots{id}.lines(1).YData = zeros(1, num_samples);
+            plots{id}.lines(1).XData = x;
+            plots{id}.lines(1).YData = zeros(1, num_samples);
 
         case 'Time (2-Channel)'
             x = linspace(double(info.xmin), double(info.xmax), num_samples);
 
-            handles.plots{id}.lines(1).XData = x;
-            handles.plots{id}.lines(1).YData = zeros(1, num_samples);
+            plots{id}.lines(1).XData = x;
+            plots{id}.lines(1).YData = zeros(1, num_samples);
 
-            handles.plots{id}.lines(2).XData = x;
-            handles.plots{id}.lines(2).YData = zeros(1, num_samples);
+            plots{id}.lines(2).XData = x;
+            plots{id}.lines(2).YData = zeros(1, num_samples);
 
         case 'Time (XY)'
-            handles.plots{id}.lines(1).XData = zeros(1, num_samples);
-            handles.plots{id}.lines(1).YData = zeros(1, num_samples);
+            plots{id}.lines(1).XData = zeros(1, num_samples);
+            plots{id}.lines(1).YData = zeros(1, num_samples);
     end
 
     % Update the axes limits for this plot
@@ -118,6 +117,36 @@ function update_plot_config(hObject, handles)
 
     % Update the plot label
     set(handles.xlabel, 'String', info.xlabel);
+end
+
+% Get the handle to the GUI's root object
+function [root] = get_root_object(hObject)
+    if strcmp(hObject.Type, 'root')
+        root = hObject;
+    else
+        root = get_root_object(hObject.Parent);
+    end
+end
+
+% Get the number of samples that are retrieved from the device per RX
+function [num_samples] = get_num_samples(hObject)
+    root = get_root_object(hObject);
+    num_samples = getappdata(root, 'num_samples');
+    if isempty(num_samples)
+        error('Failed to access app data: num_samples');
+    end
+end
+
+% Get the array of plots
+function [plots] = get_plots(hObject)
+    root = get_root_object(hObject);
+    plots = getappdata(root, 'plots');
+    if isempty(plots)
+        error('Failed to access app data: plot');
+    end
+end
+
+function update_plot_axes(hObject)
 end
 
 function [plot_info] = init_plot_type(hObject, handles, type)
@@ -130,10 +159,7 @@ function [plot_info] = init_plot_type(hObject, handles, type)
     blue = [0 0 1];
     red  = [1 0 0];
 
-    num_samples = getappdata(hObject, 'num_samples');
-    if isempty(num_samples)
-        error('Application property "num_samples" is unexpectedly empty.');
-    end
+    num_samples = get_num_samples(hObject);
 
     switch type
         case 'FFT (dB)'
@@ -248,10 +274,12 @@ function bladeRF_fft_OpeningFcn(hObject, ~, handles, varargin)
     %  Create plot information for each type of lot
     type_strs = get(handles.displaytype, 'String');
 
-    handles.plots = cell(1, length(type_strs));
-    for n = 1:length(handles.plots)
-        handles.plots{n} = init_plot_type(hObject.Parent, handles, type_strs{n});
+    plots = cell(1, length(type_strs));
+    for n = 1:length(plots)
+        plots{n} = init_plot_type(hObject.Parent, handles, type_strs{n});
     end
+
+    setappdata(hObject.Parent, 'plots', plots);
 
     update_plot_config(hObject.Parent, handles);
 
@@ -285,10 +313,8 @@ function actionbutton_Callback(hObject, ~, handles)
             update = 1;
             framerate = 30;
 
-            num_samples = getappdata(hObject.Parent.Parent, 'num_samples');
-            if isempty(num_samples)
-                error('Application property "num_samples" is unexpectedly empty.');
-            end
+            num_samples = get_num_samples(hObject);
+            plots = get_plots(hObject);
 
             samples = zeros(1, num_samples);
 
@@ -306,21 +332,21 @@ function actionbutton_Callback(hObject, ~, handles)
                     update = 0;
                     id = get(handles.displaytype, 'Value');
 
-                    switch handles.plots{id}.name
+                    switch plots{id}.name
                         case 'FFT (dB)'
-                            handles.plots{id}.lines(1).YData = 20*log10(abs(fftshift(fft(samples))));
+                            plots{id}.lines(1).YData = 20*log10(abs(fftshift(fft(samples))));
 
                         case 'FFT (linear)'
-                            handles.plots{id}.lines(1).YData = abs(fftshift(fft(samples)));
+                            plots{id}.lines(1).YData = abs(fftshift(fft(samples)));
 
                         case 'Time (2-Channel)'
-                            handles.plots{id}.lines(1).YData = real(samples);
-                            handles.plots{id}.lines(2).YData = imag(samples);
+                            plots{id}.lines(1).YData = real(samples);
+                            plots{id}.lines(2).YData = imag(samples);
 
 
                         case 'Time (XY)'
-                            handles.plots{id}.lines(1).XData = real(samples);
-                            handles.plots{id}.lines(1).YData = imag(samples);
+                            plots{id}.lines(1).XData = real(samples);
+                            plots{id}.lines(1).YData = imag(samples);
 
                         otherwise
                             error('Invalid plot selection encountered');
@@ -514,6 +540,8 @@ function samplerate_Callback(hObject, ~, handles)
     val = handles.bladerf.rx.samplerate ;
     set(hObject, 'String', num2str(val)) ;
     set(hObject, 'Value', val) ;
+
+    update_plot_config(hObject.Parent, handles);
 end
 
 function samplerate_CreateFcn(hObject, ~, ~)
@@ -533,6 +561,8 @@ function frequency_Callback(hObject, ~, handles)
     handles.bladerf.rx.frequency = val ;
     set(hObject, 'String', num2str(val)) ;
     set(hObject, 'Value', val) ;
+
+    update_plot_config(hObject.Parent.Parent.Parent, handles);
 end
 
 function frequency_CreateFcn(hObject, ~, ~)
