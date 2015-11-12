@@ -329,7 +329,9 @@ classdef XCVR
 
                 obj.bladerf.set_status(rv) ;
                 obj.bladerf.check('bladerf_sync_rx') ;
-                samples = double(s16(1:2:end)) + double(s16(2:2:end))*1j ;
+
+                % Deinterleve and scale to [-1.0, 1.0).
+                samples = (double(s16(1:2:end)) + double(s16(2:2:end))*1j) ./ 2048.0;
             else
                 error('Cannot receive on TX transceiver') ;
             end
@@ -347,9 +349,14 @@ classdef XCVR
                 metad.status = 0 ;
                 metad.timestamp = 0 ;
                 pmetad = libpointer('bladerf_metadata', metad) ;
+
+                % Interleave and scale. We scale by 2047.0 rather than 2048.0
+                % here because valid values are only [-2048, 2047]. However,
+                % it's simpler to allow users to assume they can just input [-1.0, 1.0].
                 s16 = zeros(1, 2*length(samples)) ;
-                s16(1:2:end) = samples(1:2:end) ;
-                s16(2:2:end) = samples(2:2:end) ;
+                s16(1:2:end) = samples(1:2:end) .* 2047.0;
+                s16(2:2:end) = samples(2:2:end) .* 2047.0;
+
                 rv = calllib('libbladeRF', 'bladerf_sync_tx', ...
                     obj.bladerf.device, ...
                     s16, ...
