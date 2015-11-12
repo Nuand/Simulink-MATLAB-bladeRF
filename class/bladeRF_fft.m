@@ -72,8 +72,6 @@ function update_plot_config(hObject, handles)
         error('Bug: Got invalid display type ID');
     end
 
-    info = plots{id};
-
     for n = 1:length(plots)
         if n == id
             for l = 1:length(plots{n}.lines)
@@ -93,12 +91,12 @@ function update_plot_config(hObject, handles)
     % Reset data so we don't see "random" junk when switching displays
     switch plots{id}.name
         case { 'FFT (dB)', 'FFT (linear)' }
-            x = linspace(double(info.xmin), double(info.xmax), num_samples);
+            x = linspace(double(plots{id}.xmin), double(plots{id}.xmax), num_samples);
             plots{id}.lines(1).XData = x;
             plots{id}.lines(1).YData = zeros(1, num_samples);
 
         case 'Time (2-Channel)'
-            x = linspace(double(info.xmin), double(info.xmax), num_samples);
+            x = linspace(double(plots{id}.xmin), double(plots{id}.xmax), num_samples);
 
             plots{id}.lines(1).XData = x;
             plots{id}.lines(1).YData = zeros(1, num_samples);
@@ -112,11 +110,11 @@ function update_plot_config(hObject, handles)
     end
 
     % Update the axes limits for this plot
-    handles.axes1.XLim = [info.xmin info.xmax];
-    handles.axes1.YLim = [info.ymin info.ymax];
+    handles.axes1.XLim = [plots{id}.xmin plots{id}.xmax];
+    handles.axes1.YLim = [plots{id}.ymin plots{id}.ymax];
 
     % Update the plot label
-    set(handles.xlabel, 'String', info.xlabel);
+    set(handles.xlabel, 'String', plots{id}.xlabel);
 end
 
 % Get the handle to the GUI's root object
@@ -146,13 +144,72 @@ function [plots] = get_plots(hObject)
     end
 end
 
-function update_plot_axes(hObject)
+% Apply updates to plot configuration
+function set_plots(hObject, plots)
+   root = get_root_object(hObject);
+   setappdata(root, 'plots', plots);
 end
 
-function [plot_info] = init_plot_type(hObject, handles, type)
+
+function [x, y] = update_plot_axes(hObject, handles, id)
+    plots = get_plots(hObject);
+
+    % If `id` is not specified, use currently
+    if nargin < 3
+        id = handles.displaytype.Value;
+        if id < 1 || id > length(plots)
+            error('Invalid plot ID encountered');
+        end
+    end
 
     Fc = handles.bladerf.rx.frequency;
     Fs = handles.bladerf.rx.samplerate;
+    num_samples = get_num_samples(hObject);
+
+    switch plots{id}.name
+        case 'FFT (dB)'
+            plots{id}.xmin = (Fc - Fs/2);
+            plots{id}.xmax = (Fc + Fs/2);
+            plots{id}.ymin = 0;
+            plots{id}.ymax = 140;
+            x = linspace(double(plots{id}.xmin), double(plots{id}.xmax), num_samples);
+            y = zeros(1, num_samples);
+
+        case 'FFT (linear)'
+            plots{id}.xmin = (Fc - Fs/2);
+            plots{id}.xmax = (Fc + Fs/2);
+            plots{id}.ymin = 0;
+            plots{id}.ymax = 1e6;
+
+            x = linspace(double(plots{id}.xmin), double(plots{id}.xmax), num_samples);
+            y = zeros(1, num_samples);
+
+        case 'Time (2-Channel)'
+            plots{id}.xmin = 0;
+            plots{id}.xmax = (num_samples - 1) / Fs;
+            plots{id}.ymin = -2500;
+            plots{id}.ymax = 2500;
+
+            x = linspace(double(plots{id}.xmin), double(plots{id}.xmax), num_samples);
+            y = zeros(1, num_samples);
+
+        case 'Time (XY)'
+            plots{id}.xmin = -2500;
+            plots{id}.xmax = 2500;
+            plots{id}.ymin = -2500;
+            plots{id}.ymax = 2500;
+
+            x = zeros(1, num_samples);
+            y = zeros(1, num_samples);
+
+        otherwise
+            error('Invalid plot type encountered');
+    end
+
+    set_plots(hObject, plots);
+end
+
+function [plot_info] = init_plot_type(hObject, handles, type)
 
     plot_info.name = type;
 
@@ -161,33 +218,12 @@ function [plot_info] = init_plot_type(hObject, handles, type)
 
     num_samples = get_num_samples(hObject);
 
+    x = zeros(1, num_samples);
+    y = zeros(1, num_samples);
+
     switch type
-        case 'FFT (dB)'
+        case { 'FFT (dB)', 'FFT (linear)' }
             plot_info.xlabel = 'Frequency (MHz)';
-
-            plot_info.xmin = (Fc - Fs/2);
-            plot_info.xmax = (Fc + Fs/2);
-            plot_info.ymin = 0;
-            plot_info.ymax = 140;
-
-            x = linspace(double(plot_info.xmin), double(plot_info.xmax), num_samples);
-            y = zeros(1, num_samples);
-            plot_info.lines(1) = line(x, y);
-            plot_info.lines(1).Color = blue;
-            plot_info.lines(1).Marker = 'none';
-            plot_info.lines(1).LineStyle = '-';
-
-        case 'FFT (linear)'
-            plot_info.xlabel = 'Frequency (MHz)';
-
-            plot_info.xmin = (Fc - Fs/2);
-            plot_info.xmax = (Fc + Fs/2);
-            plot_info.ymin = 0;
-            plot_info.ymax = 1e6;
-
-            x = linspace(double(plot_info.xmin), double(plot_info.xmax), num_samples);
-            y = zeros(1, num_samples);
-
             plot_info.lines(1) = line(x, y);
             plot_info.lines(1).Color = blue;
             plot_info.lines(1).Marker = 'none';
@@ -195,14 +231,6 @@ function [plot_info] = init_plot_type(hObject, handles, type)
 
         case 'Time (2-Channel)'
             plot_info.xlabel = 'Time (s)';
-
-            plot_info.xmin = 0;
-            plot_info.xmax = (num_samples - 1) / Fs;
-            plot_info.ymin = -2500;
-            plot_info.ymax = 2500;
-
-            x = linspace(double(plot_info.xmin), double(plot_info.xmax), num_samples);
-            y = zeros(1, num_samples);
 
             plot_info.lines(1) = line(x, y);
             plot_info.lines(1).Color = blue;
@@ -215,16 +243,7 @@ function [plot_info] = init_plot_type(hObject, handles, type)
             plot_info.lines(2).LineStyle = '-';
 
         case 'Time (XY)'
-            plot_info.marker = 'b-';
             plot_info.xlabel = 'X (counts)';
-
-            plot_info.xmin = -2500;
-            plot_info.xmax = 2500;
-            plot_info.ymin = -2500;
-            plot_info.ymax = 2500;
-
-            x = zeros(1, num_samples);
-            y = zeros(1, num_samples);
 
             plot_info.lines(1) = line(x, y);
             plot_info.lines(1).Color = blue;
@@ -280,6 +299,10 @@ function bladeRF_fft_OpeningFcn(hObject, ~, handles, varargin)
     end
 
     setappdata(hObject.Parent, 'plots', plots);
+
+    for n = 1:length(plots)
+         update_plot_axes(hObject, handles, n);
+    end
 
     update_plot_config(hObject.Parent, handles);
 
