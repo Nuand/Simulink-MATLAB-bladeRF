@@ -126,6 +126,21 @@ function [root] = get_root_object(hObject)
     end
 end
 
+% Get the state of the 'Print Overruns' flag
+function [print_overruns] = get_print_overruns(hObject)
+    root = get_root_object(hObject);
+    print_overruns = getappdata(root, 'print_overruns');
+    if isempty(print_overruns)
+        error('Failed to access app data: print_overruns');
+    end
+end
+
+% Set the state of the 'Print Overruns' flag
+function set_print_overruns(hObject, value)
+    root = get_root_object(hObject);
+    setappdata(root, 'print_overruns', value);
+end
+
 % Get the number of samples that are retrieved from the device per RX
 function [num_samples] = get_num_samples(hObject)
     root = get_root_object(hObject);
@@ -286,7 +301,16 @@ function bladeRF_fft_OpeningFcn(hObject, ~, handles, varargin)
     set(handles.corr_gain, 'String', num2str(handles.bladerf.rx.corrections.gain)) ;
     set(handles.corr_phase, 'String', num2str(handles.bladerf.rx.corrections.phase)) ;
 
-    % "Running" flag
+    handles.bladerf.rx.config.num_buffers = 64;
+    handles.bladerf.rx.config.buffer_size = 16384;
+
+    handles.num_buffers.String = num2str(handles.bladerf.rx.config.num_buffers);
+    handles.buffer_size.String = num2str(handles.bladerf.rx.config.buffer_size);
+    handles.num_transfers.String = num2str(handles.bladerf.rx.config.num_transfers);
+
+    handles.print_overruns.Value = 0;
+    setappdata(hObject.Parent, 'print_overruns', 0);
+
     setappdata(hObject.Parent, 'run', 0);
 
     % Number of samples we'll read from the device at each iteraion
@@ -327,6 +351,15 @@ function actionbutton_Callback(hObject, ~, handles)
     action = get(hObject,'String');
     switch action
         case 'Start'
+            handles.buffer_size.Enable = 'off';
+            handles.num_buffers.Enable = 'off';
+            handles.num_transfers.Enable = 'off';
+            handles.devicelist.Enable = 'off';
+
+            handles.bladerf.rx.config.num_buffers = str2num(handles.num_buffers.String);
+            handles.bladerf.rx.config.buffer_size = str2num(handles.buffer_size.String);
+            handles.bladerf.rx.config.num_transfers = str2num(handles.num_transfers.String);
+
             set(hObject,'String','Stop') ;
             handles.bladerf.rx.start;
             guidata(hObject, handles);
@@ -351,11 +384,14 @@ function actionbutton_Callback(hObject, ~, handles)
 
             while run == 1
 
-                [samples(:), ~, underrun] = ...
+                [samples(:), ~, overrun] = ...
                     handles.bladerf.rx.receive(num_samples, 5000, 0);
 
-                if underrun
-                    fprintf('Underrun @ t=%f\n', cputime - start);
+                if overrun
+                    print_overrun = get_print_overruns(hObject);
+                    if print_overrun ~= 0
+                        fprintf('Overrun @ t=%f\n', cputime - start);
+                    end
                 elseif update
                     update = 0;
                     id = get(handles.displaytype, 'Value');
@@ -398,6 +434,10 @@ function actionbutton_Callback(hObject, ~, handles)
 
         case 'Stop'
             setappdata(hObject.Parent.Parent, 'run', 0);
+            handles.buffer_size.Enable = 'on';
+            handles.num_buffers.Enable = 'on';
+            handles.num_transfers.Enable = 'on';
+            handles.devicelist.Enable = 'on';
             set(hObject,'String','Start') ;
             guidata(hObject, handles);
 
@@ -630,7 +670,7 @@ function devicelist_CreateFcn(hObject, ~, ~)
     set(hObject, 'String', list) ;
 end
 
-function figure1_CloseRequestFcn(hObject, ~, handles)
+function figure1_CloseRequestFcn(hObject, ~, ~)
     running = getappdata(hObject.Parent, 'run');
     if running == 1
         % Our hackish receive loop is still running. Flag it to shut
@@ -640,5 +680,74 @@ function figure1_CloseRequestFcn(hObject, ~, handles)
     else
         % We can shut down now.
         delete(hObject);
+    end
+end
+
+function num_buffers_Callback(hObject, ~, handles)
+    num_buffers = str2num(hObject.String);
+    if isempty(num_buffers)
+        num_buffers = handles.bladerf.rx.config.num_buffers;
+    end
+
+    num_buffers = max(2, num_buffers);
+    handles.bladerf.rx.config.num_buffers = num_buffers;
+    hObject.String = num2str(num_buffers);
+end
+
+function num_buffers_CreateFcn(hObject, ~, ~)
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
+end
+
+function buffer_size_Callback(hObject, ~, handles)
+    buffer_size = str2num(hObject.String);
+    if isempty(buffer_size);
+        buffer_size = handles.bladerf.rx.config.buffer_size;
+    end
+
+    if (mod(buffer_size, 1024) ~= 0)
+        buffer_size = max(1024, floor((buffer_size / 1024)) * 1024);
+    end
+
+    handles.bladerf.rx.config.buffer_size = buffer_size;
+    hObject.String = num2str(handles.bladerf.rx.config.buffer_size);
+end
+
+function buffer_size_CreateFcn(hObject, ~, ~)
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
+end
+
+function num_transfers_Callback(hObject, ~, handles)
+	num_transfers = str2num(hObject.String);
+    if isempty(num_transfers)
+        num_transfers = handles.bladerf.rx.config.num_transfers;
+    end
+
+    num_buffers = handles.bladerf.rx.config.num_buffers;
+
+    if num_transfers < 1
+        num_transfers = 1;
+    elseif num_transfers > floor(num_buffers / 2)
+        num_transfers = max(1, floor(num_buffers/2));
+    end
+
+    handles.bladerf.rx.config.num_transfers = num_transfers;
+    hObject.String = num2str(handles.bladerf.rx.config.num_transfers);
+end
+
+function num_transfers_CreateFcn(hObject, ~, ~)
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
+end
+
+function print_overruns_Callback(hObject, ~, ~)
+    if hObject.Value ~= 0
+        set_print_overruns(hObject, 1);
+    else
+        set_print_overruns(hObject, 0);
     end
 end
