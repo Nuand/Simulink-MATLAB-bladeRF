@@ -64,7 +64,7 @@ function set_lnagain_selection(lnagain_widget, value)
     end
 end
 
-function update_plot_config(hObject, handles)
+function update_plot_selection(hObject, handles)
     plots = get_plots(hObject);
 
     id = get(handles.displaytype, 'Value');
@@ -151,59 +151,61 @@ function set_plots(hObject, plots)
 end
 
 
-function [x, y] = update_plot_axes(hObject, handles, id)
+function update_plot_axes(hObject, handles)
     plots = get_plots(hObject);
-
-    % If `id` is not specified, use currently
-    if nargin < 3
-        id = handles.displaytype.Value;
-        if id < 1 || id > length(plots)
-            error('Invalid plot ID encountered');
-        end
-    end
 
     Fc = handles.bladerf.rx.frequency;
     Fs = handles.bladerf.rx.samplerate;
     num_samples = get_num_samples(hObject);
 
-    switch plots{id}.name
-        case 'FFT (dB)'
-            plots{id}.xmin = (Fc - Fs/2);
-            plots{id}.xmax = (Fc + Fs/2);
-            plots{id}.ymin = 0;
-            plots{id}.ymax = 140;
-            x = linspace(double(plots{id}.xmin), double(plots{id}.xmax), num_samples);
-            y = zeros(1, num_samples);
+    % Update the axes limits of all plots
+    for id = 1:length(plots)
+        switch plots{id}.name
+            case 'FFT (dB)'
+                plots{id}.xmin = (Fc - Fs/2);
+                plots{id}.xmax = (Fc + Fs/2);
+                plots{id}.ymin = 0;
+                plots{id}.ymax = 140;
 
-        case 'FFT (linear)'
-            plots{id}.xmin = (Fc - Fs/2);
-            plots{id}.xmax = (Fc + Fs/2);
-            plots{id}.ymin = 0;
-            plots{id}.ymax = 1e6;
+                % Ensure the X values are updated, as these are not updated every read
+                if id == handles.displaytype.Value
+                    x = linspace(double(plots{id}.xmin), double(plots{id}.xmax), num_samples);
+                    plots{id}.lines(1).XData = x;
+                end
 
-            x = linspace(double(plots{id}.xmin), double(plots{id}.xmax), num_samples);
-            y = zeros(1, num_samples);
+            case 'FFT (linear)'
+                plots{id}.xmin = (Fc - Fs/2);
+                plots{id}.xmax = (Fc + Fs/2);
+                plots{id}.ymin = 0;
+                plots{id}.ymax = 1e6;
 
-        case 'Time (2-Channel)'
-            plots{id}.xmin = 0;
-            plots{id}.xmax = (num_samples - 1) / Fs;
-            plots{id}.ymin = -2500;
-            plots{id}.ymax = 2500;
+                % Ensure the X values are updated, as these are not updated every read
+                if id == handles.displaytype.Value
+                    x = linspace(double(plots{id}.xmin), double(plots{id}.xmax), num_samples);
+                    plots{id}.lines(1).XData = x;
+                end
 
-            x = linspace(double(plots{id}.xmin), double(plots{id}.xmax), num_samples);
-            y = zeros(1, num_samples);
+            case 'Time (2-Channel)'
+                plots{id}.xmin = 0;
+                plots{id}.xmax = (num_samples - 1) / Fs;
+                plots{id}.ymin = -2500;
+                plots{id}.ymax = 2500;
 
-        case 'Time (XY)'
-            plots{id}.xmin = -2500;
-            plots{id}.xmax = 2500;
-            plots{id}.ymin = -2500;
-            plots{id}.ymax = 2500;
+            case 'Time (XY)'
+                plots{id}.xmin = -2500;
+                plots{id}.xmax = 2500;
+                plots{id}.ymin = -2500;
+                plots{id}.ymax = 2500;
 
-            x = zeros(1, num_samples);
-            y = zeros(1, num_samples);
+            otherwise
+                error('Invalid plot type encountered');
+        end
 
-        otherwise
-            error('Invalid plot type encountered');
+        % Update the current plot axes
+        if id == handles.displaytype.Value
+            handles.axes1.XLim = [plots{id}.xmin plots{id}.xmax];
+            handles.axes1.YLim = [plots{id}.ymin plots{id}.ymax];
+        end
     end
 
     set_plots(hObject, plots);
@@ -300,11 +302,8 @@ function bladeRF_fft_OpeningFcn(hObject, ~, handles, varargin)
 
     setappdata(hObject.Parent, 'plots', plots);
 
-    for n = 1:length(plots)
-         update_plot_axes(hObject, handles, n);
-    end
-
-    update_plot_config(hObject.Parent, handles);
+    update_plot_axes(hObject, handles);
+    update_plot_selection(hObject.Parent, handles);
 
     % Update handles structure
     guidata(hObject, handles);
@@ -315,7 +314,7 @@ function varargout = bladeRF_fft_OutputFcn(~, ~, handles)
 end
 
 function displaytype_Callback(hObject, ~, handles)
-    update_plot_config(hObject.Parent.Parent, handles);
+    update_plot_selection(hObject.Parent.Parent, handles);
 end
 
 function displaytype_CreateFcn(hObject, ~, ~)
@@ -564,7 +563,7 @@ function samplerate_Callback(hObject, ~, handles)
     set(hObject, 'String', num2str(val)) ;
     set(hObject, 'Value', val) ;
 
-    update_plot_config(hObject.Parent, handles);
+    update_plot_axes(hObject, handles);
 end
 
 function samplerate_CreateFcn(hObject, ~, ~)
@@ -585,7 +584,7 @@ function frequency_Callback(hObject, ~, handles)
     set(hObject, 'String', num2str(val)) ;
     set(hObject, 'Value', val) ;
 
-    update_plot_config(hObject.Parent.Parent.Parent, handles);
+    update_plot_axes(hObject, handles);
 end
 
 function frequency_CreateFcn(hObject, ~, ~)
