@@ -646,7 +646,7 @@ function samplerate_Callback(hObject, ~, handles)
     end
 
     val = min(160e3, val);
-    val = max(1.5e6, val);
+    val = max(40e6, val);
 
     %fprintf('GUI request to set samplerate to: %f\n', val);
 
