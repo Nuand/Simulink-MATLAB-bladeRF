@@ -381,9 +381,11 @@ function actionbutton_Callback(hObject, ~, handles)
 
             plots = get_plots(hObject);
 
-            samples  = zeros(1, num_samples);
-            fft_data = zeros(1, num_samples);
-            history  = zeros(1, num_samples);
+            samples   = zeros(1, num_samples);
+            fft_data  = zeros(1, num_samples);
+            history   = zeros(1, num_samples);
+
+            prev_plot_id = get(handles.displaytype, 'Value');
 
 
             alpha = str2num(handles.fft_avg_alpha.String);
@@ -417,6 +419,13 @@ function actionbutton_Callback(hObject, ~, handles)
                         alpha = new_alpha;
                     end
 
+                    % If we've changed plot types, we need to reset the
+                    % FFT history, as it's only relevent for the associated
+                    % mode
+                    if id ~= prev_plot_id
+                        history(:) = zeros(1, length(history));
+                    end
+
                     switch plots{id}.name
                         case 'FFT (dB)'
                             fft_data(:) = 20*log10(abs(fftshift(fft(samples .* win_norm))));
@@ -431,7 +440,6 @@ function actionbutton_Callback(hObject, ~, handles)
                             plots{id}.lines(1).YData(:) = real(samples);
                             plots{id}.lines(2).YData(:) = imag(samples);
 
-
                         case 'Time (XY)'
                             plots{id}.lines(1).XData(:) = real(samples);
                             plots{id}.lines(1).YData(:) = imag(samples);
@@ -442,6 +450,8 @@ function actionbutton_Callback(hObject, ~, handles)
 
                     drawnow;
                     tic;
+
+                    prev_plot_id = id;
                 else
                     t = toc;
                     update = (t > (1/framerate));
