@@ -113,8 +113,9 @@ function update_plot_selection(hObject, handles)
     handles.axes1.XLim = [plots{id}.xmin plots{id}.xmax];
     handles.axes1.YLim = [plots{id}.ymin plots{id}.ymax];
 
-    % Update the plot label
-    set(handles.xlabel, 'String', plots{id}.xlabel);
+    % Update the axis labels
+    xlabel(handles.axes1, plots{id}.xlabel);
+    ylabel(handles.axes1, plots{id}.ylabel);
 end
 
 % Get the handle to the GUI's root object
@@ -179,7 +180,7 @@ function update_plot_axes(hObject, handles)
             case 'FFT (dB)'
                 plots{id}.xmin = (Fc - Fs/2);
                 plots{id}.xmax = (Fc + Fs/2);
-                plots{id}.ymin = -100;
+                plots{id}.ymin = -120;
                 plots{id}.ymax = 0;
 
                 % Ensure the X values are updated, as these are not updated every read
@@ -241,6 +242,7 @@ function [plot_info] = init_plot_type(hObject, handles, type)
     switch type
         case { 'FFT (dB)', 'FFT (linear)' }
             plot_info.xlabel = 'Frequency (MHz)';
+            plot_info.ylabel = 'Power (dB)';
             plot_info.lines(1) = line(x, y);
             plot_info.lines(1).Color = blue;
             plot_info.lines(1).Marker = 'none';
@@ -248,7 +250,7 @@ function [plot_info] = init_plot_type(hObject, handles, type)
 
         case 'Time (2-Channel)'
             plot_info.xlabel = 'Time (s)';
-
+            plot_info.ylabel = 'Sample Values (I: Blue, Q: Red)';
             plot_info.lines(1) = line(x, y);
             plot_info.lines(1).Color = blue;
             plot_info.lines(1).Marker = 'none';
@@ -260,8 +262,8 @@ function [plot_info] = init_plot_type(hObject, handles, type)
             plot_info.lines(2).LineStyle = '-';
 
         case 'Time (XY)'
-            plot_info.xlabel = 'X (counts)';
-
+            plot_info.xlabel = 'I Value';
+            plot_info.ylabel = 'Q Value';
             plot_info.lines(1) = line(x, y);
             plot_info.lines(1).Color = blue;
             plot_info.lines(1).Marker = '.';
@@ -378,7 +380,14 @@ function actionbutton_Callback(hObject, ~, handles)
             win_norm = win_norm ./ 4096;
 
             plots = get_plots(hObject);
+
+            history = zeros(1, num_samples);
             samples = zeros(1, num_samples);
+
+            alpha = str2num(handles.fft_avg_alpha.String);
+            if isempty(alpha) || alpha < 0.0 || alpha >= 1.0
+                alpha = 0.0;
+            end
 
             run = 1;
             setappdata(hObject.Parent.Parent, 'run', 1);
@@ -387,6 +396,8 @@ function actionbutton_Callback(hObject, ~, handles)
 
                 [samples(:), ~, overrun] = ...
                     handles.bladerf.rx.receive(num_samples, 5000, 0);
+
+                history = history .* alpha + (1.0 - alpha) .* samples;
 
                 if overrun
                     print_overrun = get_print_overruns(hObject);
@@ -397,12 +408,20 @@ function actionbutton_Callback(hObject, ~, handles)
                     update = 0;
                     id = get(handles.displaytype, 'Value');
 
+                    % Since we're only displaying the GUI at some frame
+                    % rate, there's no sense in constantly polling the
+                    % user-supplied alpha for changes.
+                    new_alpha = str2num(handles.fft_avg_alpha.String);
+                    if ~isempty(alpha)
+                        alpha = new_alpha;
+                    end
+
                     switch plots{id}.name
                         case 'FFT (dB)'
-                            plots{id}.lines(1).YData = 20*log10(abs(fftshift(fft(samples .* win_norm))));
+                            plots{id}.lines(1).YData = 20*log10(abs(fftshift(fft(history .* win_norm))));
 
                         case 'FFT (linear)'
-                            plots{id}.lines(1).YData = abs(fftshift(fft(samples .* win_norm)));
+                            plots{id}.lines(1).YData = abs(fftshift(fft(history .* win_norm)));
 
                         case 'Time (2-Channel)'
                             plots{id}.lines(1).YData = real(samples);
@@ -751,5 +770,15 @@ function print_overruns_Callback(hObject, ~, ~)
         set_print_overruns(hObject, 1);
     else
         set_print_overruns(hObject, 0);
+    end
+end
+
+function fft_avg_alpha_Callback(hObject, eventdata, handles)
+
+end
+
+function fft_avg_alpha_CreateFcn(hObject, ~, ~)
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
     end
 end
