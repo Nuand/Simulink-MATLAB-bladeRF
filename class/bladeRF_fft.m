@@ -303,7 +303,7 @@ function bladeRF_fft_OpeningFcn(hObject, ~, handles, varargin)
 
     % UIWAIT makes bladeRF_fft wait for user response (see UIRESUME)
     % uiwait(handles.figure1);
-    handles.bladerf = bladeRF('*:instance=0') ;
+    handles.bladerf = bladeRF('*:instance=0');
 
     read_device_parameters(hObject, handles);
 
@@ -485,7 +485,7 @@ function lnagain_Callback(hObject, ~, handles)
 
     %fprintf('GUI Request to set LNA gain to: %s\n', items{index})
 
-    handles.bladerf.rx.lna = items{index} ;
+    handles.bladerf.rx.lna = items{index};
     guidata(hObject, handles);
 end
 
@@ -499,12 +499,12 @@ function vga1_Callback(hObject, ~, handles)
     val = str2num(hObject.String);
     if isempty(val)
 
-        val = handles.bladerf.rx.vga1 ;
+        val = handles.bladerf.rx.vga1;
     end
 
     %fprintf('GUI request to set VGA1: %d\n', val);
 
-    handles.bladerf.rx.vga1 = val ;
+    handles.bladerf.rx.vga1 = val;
     hObject.String = num2str(handles.bladerf.rx.vga1);
     guidata(hObject, handles);
 end
@@ -518,12 +518,12 @@ end
 function vga2_Callback(hObject, ~, handles)
     val = str2num(hObject.String);
     if isempty(val)
-        val = handles.bladerf.rx.vga2 ;
+        val = handles.bladerf.rx.vga2;
     end
 
     %fprintf('GUI request to set VGA2: %d\n', val);
 
-    handles.bladerf.rx.vga2 = val ;
+    handles.bladerf.rx.vga2 = val;
     hObject.String = num2str(handles.bladerf.rx.vga2);
     guidata(hObject, handles);
 end
@@ -537,7 +537,7 @@ end
 function bandwidth_Callback(hObject, ~, handles)
     values = hObject.String;
     index = hObject.Value;
-    selected = str2num(values{index}) ;
+    selected = str2num(values{index});
 
     bw = selected * 1.0e6;
     %fprintf('GUI request to set bandwidth to: %f\n', bw);
@@ -626,15 +626,15 @@ function corr_phase_CreateFcn(hObject, ~, ~)
 end
 
 function samplerate_Callback(hObject, ~, handles)
-    val = str2num(hObject.String) ;
+    val = str2num(hObject.String);
     if isempty(val)
-        val = handles.bladerf.rx.samplerate ;
+        val = handles.bladerf.rx.samplerate;
     end
 
     %fprintf('GUI request to set samplerate to: %f\n', val);
 
-    handles.bladerf.rx.samplerate = val ;
-    val = handles.bladerf.rx.samplerate ;
+    handles.bladerf.rx.samplerate = val;
+    val = handles.bladerf.rx.samplerate;
     hObject.String = num2str(val);
 
     update_plot_axes(hObject, handles);
@@ -649,12 +649,12 @@ end
 function frequency_Callback(hObject, ~, handles)
     val = str2num(hObject.String);
     if isempty(val)
-        val = handles.bladerf.rx.frequency ;
+        val = handles.bladerf.rx.frequency;
     end
 
     %fprintf('GUI request to set frequency: %d\n', val);
 
-    handles.bladerf.rx.frequency = val ;
+    handles.bladerf.rx.frequency = val;
     hObject.String = num2str(val);
     hObject.Value = val;
 
@@ -670,10 +670,10 @@ end
 function devicelist_Callback(hObject, ~, handles)
     items = hObject.String;
     index = hObject.Value;
-    devstring = items{index} ;
-    handles.bladerf.delete ;
-    guidata(hObject, handles) ;
-    handles.bladerf = bladeRF(devstring) ;
+    devstring = items{index};
+    handles.bladerf.delete;
+    guidata(hObject, handles);
+    handles.bladerf = bladeRF(devstring);
     read_device_parameters(hObject, handles);
     guidata(hObject, handles);
 end
@@ -687,14 +687,14 @@ function devicelist_CreateFcn(hObject, ~, ~)
     for idx=1:length(devs)
         switch devs(idx).backend
             case 'BLADERF_BACKEND_LIBUSB'
-                backend = 'libusb' ;
+                backend = 'libusb';
             case 'BLADERF_BACKEND_CYPRESS'
-                backend = 'cypress' ;
+                backend = 'cypress';
             otherwise
-                disp('Not sure which backend is being used') ;
-                backend = '*' ;
+                disp('Not sure which backend is being used');
+                backend = '*';
         end
-        list{idx} = strcat(backend, ':serial=', devs(idx).serial) ;
+        list{idx} = strcat(backend, ':serial=', devs(idx).serial);
     end
     hObject.String = list;
 end
@@ -782,7 +782,6 @@ function print_overruns_Callback(hObject, ~, ~)
 end
 
 function fft_avg_alpha_Callback(hObject, eventdata, handles)
-
 end
 
 function fft_avg_alpha_CreateFcn(hObject, ~, ~)
