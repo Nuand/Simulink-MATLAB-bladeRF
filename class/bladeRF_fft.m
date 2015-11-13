@@ -93,20 +93,20 @@ function update_plot_selection(hObject, handles)
         case { 'FFT (dB)', 'FFT (linear)' }
             x = linspace(double(plots{id}.xmin), double(plots{id}.xmax), num_samples);
             plots{id}.lines(1).XData = x;
-            plots{id}.lines(1).YData = zeros(1, num_samples) - plots{id}.ymin;
+            plots{id}.lines(1).YData = zeros(num_samples, 1) - plots{id}.ymin;
 
         case 'Time (2-Channel)'
             x = linspace(double(plots{id}.xmin), double(plots{id}.xmax), num_samples);
 
             plots{id}.lines(1).XData = x;
-            plots{id}.lines(1).YData = zeros(1, num_samples);
+            plots{id}.lines(1).YData = zeros(num_samples, 1);
 
             plots{id}.lines(2).XData = x;
-            plots{id}.lines(2).YData = zeros(1, num_samples);
+            plots{id}.lines(2).YData = zeros(num_samples, 1);
 
         case 'Time (XY)'
-            plots{id}.lines(1).XData = zeros(1, num_samples);
-            plots{id}.lines(1).YData = zeros(1, num_samples);
+            plots{id}.lines(1).XData = zeros(num_samples, 1);
+            plots{id}.lines(1).YData = zeros(num_samples, 1);
     end
 
     % Update the axes limits for this plot
@@ -236,8 +236,8 @@ function [plot_info] = init_plot_type(hObject, handles, type)
 
     num_samples = get_num_samples(hObject);
 
-    x = zeros(1, num_samples);
-    y = zeros(1, num_samples);
+    x = zeros(num_samples, 1);
+    y = zeros(num_samples, 1);
 
     switch type
         case { 'FFT (dB)', 'FFT (linear)' }
@@ -375,15 +375,15 @@ function actionbutton_Callback(hObject, ~, handles)
 
             % We'll window our samples. However, we want to normalize
             % this to account for some of its inherent loss.
-            win = blackmanharris(num_samples).';
+            win = blackmanharris(num_samples);
             win_norm = (1 / sum(abs(win) ./ num_samples) .* win);
             win_norm = win_norm ./ 4096;
 
             plots = get_plots(hObject);
 
-            samples   = zeros(1, num_samples);
-            fft_data  = zeros(1, num_samples);
-            history   = zeros(1, num_samples);
+            samples   = zeros(num_samples, 1);
+            fft_data  = zeros(num_samples, 1);
+            history   = zeros(num_samples, 1);
 
             prev_plot_id = -1;
 
@@ -399,7 +399,6 @@ function actionbutton_Callback(hObject, ~, handles)
 
                 [samples(:), ~, overrun] = ...
                     handles.bladerf.rx.receive(num_samples, 5000, 0);
-
 
                 if overrun
                     print_overrun = get_print_overruns(hObject);

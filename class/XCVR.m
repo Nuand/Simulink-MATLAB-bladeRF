@@ -311,7 +311,7 @@ classdef XCVR < handle
                 if isempty(timeout_ms) == true
                     timeout_ms = 5000 ;
                 end
-                s16 = int16(zeros(1, 2*num_samples)) ;
+                s16 = int16(zeros(2*num_samples, 1)) ;
                 metad = libstruct('bladerf_metadata') ;
                 metad.actual_count = 0 ;
                 metad.flags = bitshift(1,31) ;
