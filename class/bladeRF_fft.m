@@ -498,9 +498,11 @@ end
 function vga1_Callback(hObject, ~, handles)
     val = str2num(hObject.String);
     if isempty(val)
-
         val = handles.bladerf.rx.vga1;
     end
+
+    val = min(30, val);
+    val = max(5, val);
 
     %fprintf('GUI request to set VGA1: %d\n', val);
 
@@ -520,6 +522,9 @@ function vga2_Callback(hObject, ~, handles)
     if isempty(val)
         val = handles.bladerf.rx.vga2;
     end
+
+    val = min(30, val);
+    val = max(0, val);
 
     %fprintf('GUI request to set VGA2: %d\n', val);
 
@@ -557,6 +562,9 @@ function corr_dc_i_Callback(hObject, ~, handles)
         val = handles.bladerf.rx.corrections.dc_i;
     end
 
+    val = min(2048, val);
+    val = max(-2048, val);
+
     %fprintf('GUI request to set I DC correction to: %f\n', val)
     handles.bladerf.rx.corrections.dc_i = val;
 
@@ -580,6 +588,9 @@ function corr_dc_q_Callback(hObject, ~, handles)
     if isempty(val)
         val = handles.bladerf.rx.corrections.dc_q;
     end
+
+    val = min(2048, val);
+    val = max(-2048, val);
 
     %fprintf('GUI request to set IQ DC correction to: %f\n', val)
     handles.bladerf.rx.corrections.dc_q = val;
@@ -634,6 +645,9 @@ function samplerate_Callback(hObject, ~, handles)
         val = handles.bladerf.rx.samplerate;
     end
 
+    val = min(160e3, val);
+    val = max(1.5e6, val);
+
     %fprintf('GUI request to set samplerate to: %f\n', val);
 
     handles.bladerf.rx.samplerate = val;
@@ -654,6 +668,9 @@ function frequency_Callback(hObject, ~, handles)
     if isempty(val)
         val = handles.bladerf.rx.frequency;
     end
+
+    val = min(3.8e9, val);
+    val = max(0, val);
 
     %fprintf('GUI request to set frequency: %d\n', val);
 
