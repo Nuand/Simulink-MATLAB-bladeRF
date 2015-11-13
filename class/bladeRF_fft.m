@@ -273,6 +273,28 @@ function [plot_info] = init_plot_type(hObject, handles, type)
     end
 end
 
+% Update GUI fields with parameter values from device
+function read_device_parameters(hObject, handles)
+    handles.vga1.String = num2str(handles.bladerf.rx.vga1);
+    handles.vga2.String = num2str(handles.bladerf.rx.vga2);
+    set_lnagain_selection(handles.lnagain, handles.bladerf.rx.lna);
+
+    handles.corr_dc_i.String  = num2str(handles.bladerf.rx.corrections.dc_i);
+    handles.corr_dc_q.String  = num2str(handles.bladerf.rx.corrections.dc_q);
+    handles.corr_gain.String  = num2str(handles.bladerf.rx.corrections.gain);
+    handles.corr_phase.String = num2str(handles.bladerf.rx.corrections.phase);
+
+    handles.frequency.String  = num2str(handles.bladerf.rx.frequency);
+    handles.samplerate.String = num2str(handles.bladerf.rx.samplerate);
+    set_bandwidth_selection(handles.bandwidth, handles.bladerf.rx.bandwidth);
+
+    handles.num_buffers.String = num2str(handles.bladerf.rx.config.num_buffers);
+    handles.buffer_size.String = num2str(handles.bladerf.rx.config.buffer_size);
+    handles.num_transfers.String = num2str(handles.bladerf.rx.config.num_transfers);
+
+    guidata(hObject, handles);
+end
+
 function bladeRF_fft_OpeningFcn(hObject, ~, handles, varargin)
     % Choose default command line output for bladeRF_fft
     handles.output = hObject;
@@ -281,33 +303,11 @@ function bladeRF_fft_OpeningFcn(hObject, ~, handles, varargin)
     % uiwait(handles.figure1);
     handles.bladerf = bladeRF('*:instance=0') ;
 
-    % Set text labels
-    set(handles.vga1, 'String', num2str(handles.bladerf.rx.vga1)) ;
-    set(handles.vga2, 'String', num2str(handles.bladerf.rx.vga2)) ;
-    set_lnagain_selection(handles.lnagain, handles.bladerf.rx.lna);
-
-    val = handles.bladerf.rx.samplerate ;
-    set(handles.samplerate, 'String', num2str(val)) ;
-    set(handles.samplerate, 'Value', val ) ;
-
-    set_bandwidth_selection(handles.bandwidth, handles.bladerf.rx.bandwidth);
-
-    val = handles.bladerf.rx.frequency ;
-    set(handles.frequency, 'String', num2str(val)) ;
-    set(handles.frequency, 'Value', val) ;
-
-    set(handles.corr_dc_i, 'String', num2str(handles.bladerf.rx.corrections.dc_i)) ;
-    set(handles.corr_dc_q, 'String', num2str(handles.bladerf.rx.corrections.dc_q)) ;
-    set(handles.corr_gain, 'String', num2str(handles.bladerf.rx.corrections.gain)) ;
-    set(handles.corr_phase, 'String', num2str(handles.bladerf.rx.corrections.phase)) ;
+    read_device_parameters(hObject, handles);
 
     handles.bladerf.rx.config.num_buffers = 64;
     handles.bladerf.rx.config.buffer_size = 16384;
-    handles.bladerf.rx.config.timeout = 5000;
-
-    handles.num_buffers.String = num2str(handles.bladerf.rx.config.num_buffers);
-    handles.buffer_size.String = num2str(handles.bladerf.rx.config.buffer_size);
-    handles.num_transfers.String = num2str(handles.bladerf.rx.config.num_transfers);
+    handles.bladerf.rx.config.timeout_ms = 5000;
 
     handles.print_overruns.Value = 0;
     setappdata(hObject.Parent, 'print_overruns', 0);
@@ -647,6 +647,7 @@ function devicelist_Callback(hObject, ~, handles)
     handles.bladerf.delete ;
     guidata(hObject, handles) ;
     handles.bladerf = bladeRF(devstring) ;
+    read_device_parameters(hObject, handles);
     guidata(hObject, handles);
 end
 
