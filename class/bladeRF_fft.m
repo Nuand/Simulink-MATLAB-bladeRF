@@ -593,10 +593,13 @@ function corr_gain_Callback(hObject, ~, handles)
         val = handles.bladerf.rx.corrections.gain;
     end
 
+    val = max(-1.0, val);
+    val = min(1.0, val);
+
     %fprintf('GUI request to set IQ gain correction to: %f\n', val)
     handles.bladerf.rx.corrections.gain = val;
 
-    hObject.String, num2str(val);
+    hObject.String = num2str(val);
 end
 
 

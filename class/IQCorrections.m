@@ -55,7 +55,7 @@ classdef IQCorrections
         % Property Setters/getters
         function obj = set.dc_i(obj, val)
             if val < -2048 || val > 2048
-                error('DC offset correction value for Q channel is outside allowed range.');
+                error('DC offset correction value for I channel must be within [-2048, 2048].');
             end
 
             %fprintf('Setting I DC offset correction: %d\n', val);
@@ -72,7 +72,7 @@ classdef IQCorrections
 
         function obj = set.dc_q(obj, val)
             if val < -2048 || val > 2048
-                error('DC offset correction value for Q channel is outside allowed range.');
+                error('DC offset correction value for Q channel must be within [-2048, 2048].');
             end
 
             %fprintf('Setting Q DC offset correction: %d\n', val);
@@ -149,27 +149,35 @@ classdef IQCorrections
         end
 
         function obj = set.gain(obj, val)
+            if val < -1.0 || val > 1.0
+                error('Gain correction value must be withint [-1.0, 1.0]');
+            end
+
+            val = val * 4096;
 
             [rv, ~] = calllib('libbladeRF', 'bladerf_set_correction', ...
-                obj.bladerf.device, ...
-                obj.module, ...
-                'BLADERF_CORR_FPGA_GAIN', ...
-                val * 4096.0 ) ;
+                              obj.bladerf.device, ...
+                              obj.module, ...
+                              'BLADERF_CORR_FPGA_GAIN', ...
+                              val);
+
             obj.bladerf.set_status(rv);
             obj.bladerf.check('bladerf_set_correction:gain') ;
         end
 
         function val = get.gain(obj)
-            x = int16(0) ;
-            [rv, ~, x] = calllib('libbladeRF', 'bladerf_get_correction', ...
-                obj.bladerf.device, ...
-                obj.module, ...
-                'BLADERF_CORR_FPGA_GAIN', ...
-                x ) ;
+            val = int16(0);
+            [rv, ~, val] = calllib('libbladeRF', 'bladerf_get_correction', ...
+                                    obj.bladerf.device, ...
+                                    obj.module, ...
+                                    'BLADERF_CORR_FPGA_GAIN', ...
+                                    val);
+
             obj.bladerf.set_status(rv) ;
-            obj.bladerf.check('bladerf_get_correction:gain') ;
-            obj.phase = double(x) / 4096.0 ;
-            val = obj.phase ;
+            obj.bladerf.check('bladerf_get_correction:gain');
+
+            val = val / 4096;
+            obj.gain = val;
         end
     end
 end
