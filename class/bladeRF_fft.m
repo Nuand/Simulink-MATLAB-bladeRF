@@ -93,7 +93,7 @@ function update_plot_selection(hObject, handles)
         case { 'FFT (dB)', 'FFT (linear)' }
             x = linspace(double(plots{id}.xmin), double(plots{id}.xmax), num_samples);
             plots{id}.lines(1).XData = x;
-            plots{id}.lines(1).YData = zeros(1, num_samples);
+            plots{id}.lines(1).YData = zeros(1, num_samples) - plots{id}.ymin;
 
         case 'Time (2-Channel)'
             x = linspace(double(plots{id}.xmin), double(plots{id}.xmax), num_samples);
@@ -180,7 +180,7 @@ function update_plot_axes(hObject, handles)
             case 'FFT (dB)'
                 plots{id}.xmin = (Fc - Fs/2);
                 plots{id}.xmax = (Fc + Fs/2);
-                plots{id}.ymin = -120;
+                plots{id}.ymin = -110;
                 plots{id}.ymax = 0;
 
                 % Ensure the X values are updated, as these are not updated every read
@@ -385,8 +385,7 @@ function actionbutton_Callback(hObject, ~, handles)
             fft_data  = zeros(1, num_samples);
             history   = zeros(1, num_samples);
 
-            prev_plot_id = get(handles.displaytype, 'Value');
-
+            prev_plot_id = -1;
 
             alpha = str2num(handles.fft_avg_alpha.String);
             if isempty(alpha) || alpha < 0.0 || alpha >= 1.0
@@ -423,8 +422,8 @@ function actionbutton_Callback(hObject, ~, handles)
                     % FFT history, as it's only relevent for the associated
                     % mode
                     if id ~= prev_plot_id
-                        history(:) = zeros(1, length(history));
-                    end
+                        history(:) = zeros(1, length(history)) + plots{id}.ymin;
+                     end
 
                     switch plots{id}.name
                         case 'FFT (dB)'
