@@ -27,12 +27,17 @@
 %
 
 %% Control and configuration of transceiver properties
-classdef XCVR
+classdef XCVR < handle
 
     properties(SetAccess = immutable)
         bladerf
         module
         direction
+    end
+
+    properties(SetAccess = private)
+        running         % Is the XCVR is actively streaming samples?
+        timestamp       % Placeholder
     end
 
     properties
@@ -43,7 +48,7 @@ classdef XCVR
         vga1            % VGA1
         vga2            % VGA2
         lna             % LNA
-        timestamp       % Placeholder
+
         corrections     % IQ corrections
     end
 
@@ -108,7 +113,7 @@ classdef XCVR
 
         % Bandwidth
         function obj = set.bandwidth(obj, val)
-            actual = uint32(0) ;
+            actual = uint32(0);
             [rv, ~, actual] = calllib('libbladeRF', 'bladerf_set_bandwidth', obj.bladerf.device, obj.module, val, actual) ;
             obj.bladerf.set_status(rv) ;
             obj.bladerf.check('bladerf_set_bandwidth') ;
@@ -271,12 +276,13 @@ classdef XCVR
                 obj.vga2 = 16 ;
             end
             obj.corrections = IQCorrections(dev, obj.module, 0, 0, 0, 0) ;
+            obj.running = 0;
         end
 
         %% Usage
         function start(obj)
             %disp(strcat('Start ', obj.direction))
-            % Lock down the config
+            obj.running = 1;
             obj.config.lock() ;
 
             % Configure the sync config
@@ -382,6 +388,7 @@ classdef XCVR
 
             % Unlock the configuration for changing
             obj.config.unlock() ;
+            obj.running = 0;
         end
 
     end
