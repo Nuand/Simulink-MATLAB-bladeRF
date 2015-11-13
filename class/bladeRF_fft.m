@@ -46,20 +46,20 @@ function varargout = bladeRF_fft(varargin)
 end
 
 function set_bandwidth_selection(bandwidth_widget, value)
-    strings = get(bandwidth_widget, 'String');
+    strings = bandwidth_widget.String;
 
     for n = 1:length(strings)
         if value == (str2num(strings{n}) * 1e6)
-            set(bandwidth_widget, 'Value', n);
+            bandwidth_widget.Value = n;
         end
     end
 end
 
 function set_lnagain_selection(lnagain_widget, value)
-    strings = get(lnagain_widget, 'String');
+    strings = lnagain_widget.String;
     for n = 1:length(strings)
         if strcmpi(strings{n}, value)
-            set(lnagain_widget, 'Value', n)
+            lnagain_widget.Value = n;
         end
     end
 end
@@ -67,7 +67,7 @@ end
 function update_plot_selection(hObject, handles)
     plots = get_plots(hObject);
 
-    id = get(handles.displaytype, 'Value');
+    id = handles.displaytype.Value;
     if id < 1 || id > length(plots)
         error('Bug: Got invalid display type ID');
     end
@@ -320,7 +320,7 @@ function bladeRF_fft_OpeningFcn(hObject, ~, handles, varargin)
     setappdata(hObject.Parent, 'num_samples', 4096);
 
     %  Create plot information for each type of lot
-    type_strs = get(handles.displaytype, 'String');
+    type_strs = handles.displaytype.String;
 
     plots = cell(1, length(type_strs));
     for n = 1:length(plots)
@@ -346,12 +346,12 @@ end
 
 function displaytype_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
+        hObject.BackgroundColor = 'white';
     end
 end
 
 function actionbutton_Callback(hObject, ~, handles)
-    action = get(hObject,'String');
+    action = hObject.String;
     switch action
         case 'Start'
             handles.buffer_size.Enable = 'off';
@@ -363,7 +363,7 @@ function actionbutton_Callback(hObject, ~, handles)
             handles.bladerf.rx.config.buffer_size = str2num(handles.buffer_size.String);
             handles.bladerf.rx.config.num_transfers = str2num(handles.num_transfers.String);
 
-            set(hObject,'String','Stop') ;
+            hObject.String = 'Stop';
             handles.bladerf.rx.start;
             guidata(hObject, handles);
 
@@ -408,7 +408,7 @@ function actionbutton_Callback(hObject, ~, handles)
                     end
                 elseif update
                     update = 0;
-                    id = get(handles.displaytype, 'Value');
+                    id = handles.displaytype.Value;
 
                     % Since we're only displaying the GUI at some frame
                     % rate, there's no sense in constantly polling the
@@ -471,7 +471,7 @@ function actionbutton_Callback(hObject, ~, handles)
             handles.num_buffers.Enable = 'on';
             handles.num_transfers.Enable = 'on';
             handles.devicelist.Enable = 'on';
-            set(hObject,'String','Start') ;
+            hObject.String = 'Start';
             guidata(hObject, handles);
 
         otherwise
@@ -480,8 +480,8 @@ function actionbutton_Callback(hObject, ~, handles)
 end
 
 function lnagain_Callback(hObject, ~, handles)
-    items = get(hObject,'String') ;
-    index = get(hObject,'Value') ;
+    items = hObject.String;
+    index = hObject.Value;
 
     %fprintf('GUI Request to set LNA gain to: %s\n', items{index})
 
@@ -491,12 +491,12 @@ end
 
 function lnagain_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
+        hObject.BackgroundColor = white;
     end
 end
 
 function vga1_Callback(hObject, ~, handles)
-    val = str2num(get(hObject, 'String')) ;
+    val = str2num(hObject.String);
     if isempty(val)
 
         val = handles.bladerf.rx.vga1 ;
@@ -505,18 +505,18 @@ function vga1_Callback(hObject, ~, handles)
     %fprintf('GUI request to set VGA1: %d\n', val);
 
     handles.bladerf.rx.vga1 = val ;
-    set(hObject,'String', num2str(handles.bladerf.rx.vga1)) ;
+    hObject.String = num2str(handles.bladerf.rx.vga1);
     guidata(hObject, handles);
 end
 
 function vga1_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
+        hObject.BackgroundColor = 'white';
     end
 end
 
 function vga2_Callback(hObject, ~, handles)
-    val = str2num(get(hObject,'String')) ;
+    val = str2num(hObject.String);
     if isempty(val)
         val = handles.bladerf.rx.vga2 ;
     end
@@ -524,19 +524,19 @@ function vga2_Callback(hObject, ~, handles)
     %fprintf('GUI request to set VGA2: %d\n', val);
 
     handles.bladerf.rx.vga2 = val ;
-    set(hObject, 'String', num2str(handles.bladerf.rx.vga2)) ;
+    hObject.String = num2str(handles.bladerf.rx.vga2);
     guidata(hObject, handles);
 end
 
 function vga2_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
+        hObject.BackgroundColor = 'white';
     end
 end
 
 function bandwidth_Callback(hObject, ~, handles)
-    values = get(hObject,'String') ;
-    index = get(hObject,'Value') ;
+    values = hObject.String;
+    index = hObject.Value;
     selected = str2num(values{index}) ;
 
     bw = selected * 1.0e6;
@@ -547,12 +547,12 @@ end
 
 function bandwidth_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
+        hObject.BackgroundColor = 'white';
     end
 end
 
 function corr_dc_i_Callback(hObject, ~, handles)
-    val = str2num(get(hObject, 'String'));
+    val = str2num(hObject.String);
     if isempty(val)
         val = handles.bladerf.rx.corrections.dc_i;
     end
@@ -560,24 +560,23 @@ function corr_dc_i_Callback(hObject, ~, handles)
     %fprintf('GUI request to set I DC correction to: %f\n', val)
     handles.bladerf.rx.corrections.dc_i = val;
 
-    set(hObject, 'String', num2str(val));
-    set(hObject, 'Value',  val);
+    hObject.String = num2str(val);
 end
 
 function corr_dc_i_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
+        hObject.BackgroundColor = 'white';
     end
 end
 
 function corr_dc_q_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
+        hObject.BackgroundColor = 'white';
     end
 end
 
 function corr_dc_q_Callback(hObject, ~, handles)
-    val = str2num(get(hObject, 'String'));
+    val = str2num(hObject.String);
     if isempty(val)
         val = handles.bladerf.rx.corrections.dc_q;
     end
@@ -585,12 +584,11 @@ function corr_dc_q_Callback(hObject, ~, handles)
     %fprintf('GUI request to set IQ DC correction to: %f\n', val)
     handles.bladerf.rx.corrections.dc_q = val;
 
-    set(hObject, 'String', num2str(val));
-    set(hObject, 'Value',  val);
+    hObject.String = num2str(val);
 end
 
 function corr_gain_Callback(hObject, ~, handles)
-    val = str2num(get(hObject, 'String'));
+    val = str2num(hObject.String);
     if isempty(val)
         val = handles.bladerf.rx.corrections.gain;
     end
@@ -598,19 +596,18 @@ function corr_gain_Callback(hObject, ~, handles)
     %fprintf('GUI request to set IQ gain correction to: %f\n', val)
     handles.bladerf.rx.corrections.gain = val;
 
-    set(hObject, 'String', num2str(val));
-    set(hObject, 'Value',  val);
+    hObject.String, num2str(val);
 end
 
 
 function corr_gain_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
+        hObject.BackgroundColor = 'white';
     end
 end
 
 function corr_phase_Callback(hObject, ~, handles)
-    val = str2num(get(hObject, 'String'));
+    val = str2num(hObject.String);
     if isempty(val)
         val = handles.bladerf.rx.corrections.phase;
     end
@@ -619,18 +616,17 @@ function corr_phase_Callback(hObject, ~, handles)
     handles.bladerf.rx.corrections.phase = val;
 
     val = handles.bladerf.rx.corrections.phase;
-    set(hObject, 'String', num2str(val));
-    set(hObject, 'Value', val);
+    hObject.String = num2str(val);
 end
 
 function corr_phase_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
+        hObject.BackgroundColor = 'white';
     end
 end
 
 function samplerate_Callback(hObject, ~, handles)
-    val = str2num(get(hObject, 'String')) ;
+    val = str2num(hObject.String) ;
     if isempty(val)
         val = handles.bladerf.rx.samplerate ;
     end
@@ -639,20 +635,19 @@ function samplerate_Callback(hObject, ~, handles)
 
     handles.bladerf.rx.samplerate = val ;
     val = handles.bladerf.rx.samplerate ;
-    set(hObject, 'String', num2str(val)) ;
-    set(hObject, 'Value', val) ;
+    hObject.String = num2str(val);
 
     update_plot_axes(hObject, handles);
 end
 
 function samplerate_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
+        hObject.BackgroundColor = 'white';
     end
 end
 
 function frequency_Callback(hObject, ~, handles)
-    val = str2num(get(hObject, 'String')) ;
+    val = str2num(hObject.String);
     if isempty(val)
         val = handles.bladerf.rx.frequency ;
     end
@@ -660,21 +655,21 @@ function frequency_Callback(hObject, ~, handles)
     %fprintf('GUI request to set frequency: %d\n', val);
 
     handles.bladerf.rx.frequency = val ;
-    set(hObject, 'String', num2str(val)) ;
-    set(hObject, 'Value', val) ;
+    hObject.String = num2str(val);
+    hObject.Value = val;
 
     update_plot_axes(hObject, handles);
 end
 
 function frequency_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
+        hObject.BackgroundColor = 'white';
     end
 end
 
 function devicelist_Callback(hObject, ~, handles)
-    items = get(hObject,'String') ;
-    index = get(hObject,'Value') ;
+    items = hObject.String;
+    index = hObject.Value;
     devstring = items{index} ;
     handles.bladerf.delete ;
     guidata(hObject, handles) ;
@@ -685,7 +680,7 @@ end
 
 function devicelist_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
+        hObject.BackgroundColor = 'white';
     end
     devs = bladeRF.devices;
     list = cell(1, length(devs));
@@ -701,7 +696,7 @@ function devicelist_CreateFcn(hObject, ~, ~)
         end
         list{idx} = strcat(backend, ':serial=', devs(idx).serial) ;
     end
-    set(hObject, 'String', list) ;
+    hObject.String = list;
 end
 
 function figure1_CloseRequestFcn(hObject, ~, ~)
@@ -730,7 +725,7 @@ end
 
 function num_buffers_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
+        hObject.BackgroundColor = 'white';
     end
 end
 
@@ -750,7 +745,7 @@ end
 
 function buffer_size_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
+        hObject.BackgroundColor = 'white';
     end
 end
 
@@ -774,7 +769,7 @@ end
 
 function num_transfers_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
+        hObject.BackgroundColor = 'white';
     end
 end
 
@@ -792,6 +787,6 @@ end
 
 function fft_avg_alpha_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
+        hObject.BackgroundColor = 'white';
     end
 end
