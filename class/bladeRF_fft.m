@@ -381,8 +381,10 @@ function actionbutton_Callback(hObject, ~, handles)
 
             plots = get_plots(hObject);
 
-            history = zeros(1, num_samples);
-            samples = zeros(1, num_samples);
+            samples  = zeros(1, num_samples);
+            fft_data = zeros(1, num_samples);
+            history  = zeros(1, num_samples);
+
 
             alpha = str2num(handles.fft_avg_alpha.String);
             if isempty(alpha) || alpha < 0.0 || alpha >= 1.0
@@ -397,7 +399,6 @@ function actionbutton_Callback(hObject, ~, handles)
                 [samples(:), ~, overrun] = ...
                     handles.bladerf.rx.receive(num_samples, 5000, 0);
 
-                history = history .* alpha + (1.0 - alpha) .* samples;
 
                 if overrun
                     print_overrun = get_print_overruns(hObject);
@@ -418,19 +419,22 @@ function actionbutton_Callback(hObject, ~, handles)
 
                     switch plots{id}.name
                         case 'FFT (dB)'
-                            plots{id}.lines(1).YData = 20*log10(abs(fftshift(fft(history .* win_norm))));
-
+                            fft_data(:) = 20*log10(abs(fftshift(fft(samples .* win_norm))));
+                            history(:)  = history .* alpha + (1 - alpha) .* fft_data;
+                            plots{id}.lines(1).YData(:) = history;
                         case 'FFT (linear)'
-                            plots{id}.lines(1).YData = abs(fftshift(fft(history .* win_norm)));
+                            fft_data = abs(fftshift(fft(samples .* win_norm)));
+                            history(:)  = history .* alpha + (1 - alpha) .* fft_data;
+                            plots{id}.lines(1).YData(:) = history;
 
                         case 'Time (2-Channel)'
-                            plots{id}.lines(1).YData = real(samples);
-                            plots{id}.lines(2).YData = imag(samples);
+                            plots{id}.lines(1).YData(:) = real(samples);
+                            plots{id}.lines(2).YData(:) = imag(samples);
 
 
                         case 'Time (XY)'
-                            plots{id}.lines(1).XData = real(samples);
-                            plots{id}.lines(1).YData = imag(samples);
+                            plots{id}.lines(1).XData(:) = real(samples);
+                            plots{id}.lines(1).YData(:) = imag(samples);
 
                         otherwise
                             error('Invalid plot selection encountered');
