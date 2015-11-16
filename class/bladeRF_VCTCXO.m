@@ -48,17 +48,15 @@ classdef bladeRF_VCTCXO < handle
                 error('Provided VCTCXO Trim DAC value is outside allowed range.')
             end
 
-            rv = calllib('libbladeRF', 'bladerf_dac_write', obj.bladerf.device, val_u16);
-            obj.bladerf.set_status(rv);
-            obj.bladerf.check('bladerf_dac_write');
+            status = calllib('libbladeRF', 'bladerf_dac_write', obj.bladerf.device, val_u16);
+            bladeRF.check_status('bladerf_dac_write', status);
         end
 
         % Read the current VCTCXO trim DAC value
         function curr = get.current_trim(obj)
             curr = uint16(0);
-            [rv, ~, curr] = calllib('libbladeRF', 'bladerf_dac_read', obj.bladerf.device, curr);
-            obj.bladerf.set_status(rv);
-            obj.bladerf.check('bladerf_dac_read');
+            [status, ~, curr] = calllib('libbladeRF', 'bladerf_dac_read', obj.bladerf.device, curr);
+            bladeRF.check_status('bladerf_dac_read', status);
         end
 
         % Construtor
@@ -67,10 +65,9 @@ classdef bladeRF_VCTCXO < handle
 
             % Fetch the VCTCXO trim stored in flash
             stored = uint16(0);
-            [rv, ~, stored] = calllib('libbladeRF', 'bladerf_get_vctcxo_trim', obj.bladerf.device, stored);
+            [status, ~, stored] = calllib('libbladeRF', 'bladerf_get_vctcxo_trim', obj.bladerf.device, stored);
+            bladeRF.check_status('bladerf_get_vctcxo_trim', status);
 
-            obj.bladerf.set_status(rv);
-            obj.bladerf.check('bladerf_get_vctcxo_trim');
             obj.stored_trim = stored;
         end
     end

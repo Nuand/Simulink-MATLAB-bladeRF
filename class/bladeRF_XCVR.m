@@ -68,9 +68,8 @@ classdef bladeRF_XCVR < handle
             [rate.num, rate.den] = rat(mod(val,1));
 
             % Set the samplerate
-            [rv, ~, ~, actual] = calllib('libbladeRF', 'bladerf_set_rational_sample_rate', obj.bladerf.device, obj.module, rate, rate);
-            obj.bladerf.set_status(rv);
-            obj.bladerf.check('bladerf_set_rational_sample_rate');
+            [status, ~, ~, actual] = calllib('libbladeRF', 'bladerf_set_rational_sample_rate', obj.bladerf.device, obj.module, rate, rate);
+            bladeRF.check_status('bladerf_set_rational_sample_rate', status);
 
             retval = actual.integer + actual.num / actual.den;
             %fprintf('Set %s samplerate. Requested: %d + %d/%d, Actual: %d + %d/%d\n', ...
@@ -86,9 +85,8 @@ classdef bladeRF_XCVR < handle
             rate.den = 1;
 
             % Get the sample rate from the hardware
-            [rv, ~, rate] = calllib('libbladeRF', 'bladerf_get_rational_sample_rate', obj.bladerf.device, obj.module, rate);
-            obj.bladerf.set_status(rv);
-            obj.bladerf.check('bladerf_get_rational_sample_rate');
+            [status, ~, rate] = calllib('libbladeRF', 'bladerf_get_rational_sample_rate', obj.bladerf.device, obj.module, rate);
+            bladeRF.check_status('bladerf_get_rational_sample_rate', status);
 
             %fprintf('Read %s samplerate: %d + %d/%d\n', ...
             %        obj.direction, rate.integer, rate.num, rate.den);
@@ -98,18 +96,16 @@ classdef bladeRF_XCVR < handle
 
         % Frequency
         function set.frequency(obj, val)
-            [rv, ~] = calllib('libbladeRF', 'bladerf_set_frequency', obj.bladerf.device, obj.module, val);
-            obj.bladerf.set_status(rv);
-            obj.bladerf.check('bladerf_set_frequency');
+            [status, ~] = calllib('libbladeRF', 'bladerf_set_frequency', obj.bladerf.device, obj.module, val);
+            bladeRF.check_status('bladerf_set_frequency', status);
 
             %fprintf('Set %s frequency: %f\n', obj.direction, val);
         end
 
         function freq_val = get.frequency(obj)
             freq_val = uint32(0);
-            [rv, ~, freq_val] = calllib('libbladeRF', 'bladerf_get_frequency', obj.bladerf.device, obj.module, freq_val);
-            obj.bladerf.set_status(rv);
-            obj.bladerf.check('bladerf_get_frequency');
+            [status, ~, freq_val] = calllib('libbladeRF', 'bladerf_get_frequency', obj.bladerf.device, obj.module, freq_val);
+            bladeRF.check_status('bladerf_get_frequency', status);
 
             %fprintf('Read %s frequency: %f\n', obj.direction, freq_val);
         end
@@ -117,10 +113,8 @@ classdef bladeRF_XCVR < handle
         % Configures the LPF bandwidth on the associated module
         function set.bandwidth(obj, val)
             actual = uint32(0);
-            [rv, ~, actual] = calllib('libbladeRF', 'bladerf_set_bandwidth', obj.bladerf.device, obj.module, val, actual);
-
-            obj.bladerf.set_status(rv);
-            obj.bladerf.check('bladerf_set_bandwidth');
+            [status, ~, actual] = calllib('libbladeRF', 'bladerf_set_bandwidth', obj.bladerf.device, obj.module, val, actual);
+            bladeRF.check_status('bladerf_set_bandwidth', status);
 
             %fprintf('Set %s bandwidth. Requested: %f, Actual: %f\n', ...
             %        obj.direction, val, actual)
@@ -129,9 +123,8 @@ classdef bladeRF_XCVR < handle
         % Reads the LPF bandwidth configuration on the associated module
         function bw_val = get.bandwidth(obj)
             bw_val = uint32(0);
-            [rv, ~, bw_val] = calllib('libbladeRF', 'bladerf_get_bandwidth', obj.bladerf.device, obj.module, bw_val);
-            obj.bladerf.set_status(rv);
-            obj.bladerf.check('bladerf_get_bandwidth');
+            [status, ~, bw_val] = calllib('libbladeRF', 'bladerf_get_bandwidth', obj.bladerf.device, obj.module, bw_val);
+            bladeRF.check_status('bladerf_get_bandwidth', status);
 
             %fprintf('Read %s bandwidth: %f\n', obj.direction, bw_val);
         end
@@ -139,13 +132,12 @@ classdef bladeRF_XCVR < handle
         % Configures the gain of VGA1
         function set.vga1(obj, val)
             if strcmpi(obj.direction,'RX') == true
-                [rv, ~] = calllib('libbladeRF', 'bladerf_set_rxvga1', obj.bladerf.device, val);
+                [status, ~] = calllib('libbladeRF', 'bladerf_set_rxvga1', obj.bladerf.device, val);
             else
-                [rv, ~] = calllib('libbladeRF', 'bladerf_set_txvga1', obj.bladerf.device, val);
+                [status, ~] = calllib('libbladeRF', 'bladerf_set_txvga1', obj.bladerf.device, val);
             end
 
-            obj.bladerf.set_status(rv);
-            obj.bladerf.check('bladerf_set_vga1');
+            bladeRF.check_status('bladerf_set_vga1', status);
 
             %fprintf('Set %s VGA1: %d\n', obj.direction, val);
         end
@@ -154,13 +146,12 @@ classdef bladeRF_XCVR < handle
         function val = get.vga1(obj)
             val = int32(0);
             if strcmpi(obj.direction,'RX') == true
-                [rv, ~, val] = calllib('libbladeRF', 'bladerf_get_rxvga1', obj.bladerf.device, val);
+                [status, ~, val] = calllib('libbladeRF', 'bladerf_get_rxvga1', obj.bladerf.device, val);
             else
-                [rv, ~, val] = calllib('libbladeRF', 'bladerf_get_txvga1', obj.bladerf.device, val);
+                [status, ~, val] = calllib('libbladeRF', 'bladerf_get_txvga1', obj.bladerf.device, val);
             end
 
-            obj.bladerf.set_status(rv);
-            obj.bladerf.check('bladerf_get_vga1');
+            bladeRF.check_status('bladerf_get_vga1', status);
 
             %fprintf('Read %s VGA1: %d\n', obj.direction, val);
         end
@@ -168,13 +159,12 @@ classdef bladeRF_XCVR < handle
         % Configures the gain of VGA2
         function set.vga2(obj, val)
             if strcmpi(obj.direction,'RX') == true
-                [rv, ~] = calllib('libbladeRF', 'bladerf_set_rxvga2', obj.bladerf.device, val);
+                [status, ~] = calllib('libbladeRF', 'bladerf_set_rxvga2', obj.bladerf.device, val);
             else
-                [rv, ~] = calllib('libbladeRF', 'bladerf_set_txvga2', obj.bladerf.device, val);
+                [status, ~] = calllib('libbladeRF', 'bladerf_set_txvga2', obj.bladerf.device, val);
             end
 
-            obj.bladerf.set_status(rv);
-            obj.bladerf.check('bladerf_set_vga2');
+            bladeRF.check_status('bladerf_set_vga2', status);
 
             %fprintf('Set %s VGA2: %d\n', obj.direction, obj.vga2);
         end
@@ -183,13 +173,12 @@ classdef bladeRF_XCVR < handle
         function val = get.vga2(obj)
             val = int32(0);
             if strcmpi(obj.direction,'RX') == true
-                [rv, ~, val] = calllib('libbladeRF', 'bladerf_get_rxvga2', obj.bladerf.device, val);
+                [status, ~, val] = calllib('libbladeRF', 'bladerf_get_rxvga2', obj.bladerf.device, val);
             else
-                [rv, ~, val] = calllib('libbladeRF', 'bladerf_get_txvga2', obj.bladerf.device, val);
+                [status, ~, val] = calllib('libbladeRF', 'bladerf_get_txvga2', obj.bladerf.device, val);
             end
 
-            obj.bladerf.set_status(rv);
-            obj.bladerf.check('bladerf_get_vga2');
+            bladeRF.check_status('bladerf_get_vga2', status);
 
             %fprintf('Read %s VGA2: %d\n', obj.direction, val);
         end
@@ -231,9 +220,8 @@ classdef bladeRF_XCVR < handle
             if valid_value ~= true
                 error('Valid LNA values are [''BYPASS'', ''MID'', ''MAX''] or [0, 3, 6], respectively.');
             else
-                [rv, ~] = calllib('libbladeRF', 'bladerf_set_lna_gain', obj.bladerf.device, lna_val);
-                obj.bladerf.set_status(rv);
-                obj.bladerf.check('bladerf_set_lna_gain');
+                [status, ~] = calllib('libbladeRF', 'bladerf_set_lna_gain', obj.bladerf.device, lna_val);
+                bladeRF.check_status('bladerf_set_lna_gain', status);
 
                 %fprintf('Set RX LNA gain to: %s\n', lna_val);
             end
@@ -246,10 +234,8 @@ classdef bladeRF_XCVR < handle
             end
 
             val = 0;
-            [rv, ~, lna] = calllib('libbladeRF', 'bladerf_get_lna_gain', obj.bladerf.device, val);
-
-            obj.bladerf.set_status(rv);
-            obj.bladerf.check('bladerf_get_lna_gain');
+            [status, ~, lna] = calllib('libbladeRF', 'bladerf_get_lna_gain', obj.bladerf.device, val);
+            bladeRF.check_status('bladerf_get_lna_gain', status);
 
             if strcmpi(val, 'BLADERF_LNA_GAIN_BYPASS') == true
                 val = 'BYPASS';
@@ -267,9 +253,8 @@ classdef bladeRF_XCVR < handle
         % Read the timestamp counter from the associated module
         function val = get.timestamp(obj)
             val = uint64(0);
-            [rv, ~, val] = calllib('libbladeRF', 'bladerf_get_timestamp', obj.bladerf.device, obj.module, val);
-            obj.bladerf.set_status(rv);
-            obj.bladerf.check('bladerf_get_timestamp');
+            [status, ~, val] = calllib('libbladeRF', 'bladerf_get_timestamp', obj.bladerf.device, obj.module, val);
+            bladeRF.check_status('bladerf_get_timestamp', status);
         end
 
         % Constructor
@@ -314,26 +299,24 @@ classdef bladeRF_XCVR < handle
             obj.config.lock();
 
             % Configure the sync config
-            [rv, ~] = calllib('libbladeRF', 'bladerf_sync_config', ...
-                              obj.bladerf.device, ...
-                              obj.module, ...
-                              'BLADERF_FORMAT_SC16_Q11_META', ...
-                              obj.config.num_buffers, ...
-                              obj.config.buffer_size, ...
-                              obj.config.num_transfers, ...
-                              obj.config.timeout_ms);
+            [status, ~] = calllib('libbladeRF', 'bladerf_sync_config', ...
+                                  obj.bladerf.device, ...
+                                  obj.module, ...
+                                  'BLADERF_FORMAT_SC16_Q11_META', ...
+                                  obj.config.num_buffers, ...
+                                  obj.config.buffer_size, ...
+                                  obj.config.num_transfers, ...
+                                  obj.config.timeout_ms);
 
-            obj.bladerf.set_status(rv);
-            obj.bladerf.check('bladerf_sync_config');
+            bladeRF.check_status('bladerf_sync_config', status);
 
             % Enable the module
-            [rv, ~] = calllib('libbladeRF', 'bladerf_enable_module', ...
-                               obj.bladerf.device, ...
-                               obj.module, ...
-                               true);
+            [status, ~] = calllib('libbladeRF', 'bladerf_enable_module', ...
+                                  obj.bladerf.device, ...
+                                  obj.module, ...
+                                  true);
 
-            obj.bladerf.set_status(rv);
-            obj.bladerf.check('bladerf_enable_module');
+            bladeRF.check_status('bladerf_enable_module', status);
         end
 
         % Receive samples
@@ -362,20 +345,19 @@ classdef bladeRF_XCVR < handle
 
             underrun = false;
 
-            [rv, ~, s16, ~] = calllib('libbladeRF', 'bladerf_sync_rx', ...
-                                      obj.bladerf.device, ...
-                                      s16, ...
-                                      num_samples, ...
-                                      pmetad, ...
-                                      timeout_ms);
+            [status, ~, s16, ~] = calllib('libbladeRF', 'bladerf_sync_rx', ...
+                                          obj.bladerf.device, ...
+                                          s16, ...
+                                          num_samples, ...
+                                          pmetad, ...
+                                          timeout_ms);
+
+            bladeRF.check_status('bladerf_sync_rx', status);
 
             actual_count = pmetad.value.actual_count;
             if actual_count ~= num_samples
                 underrun = true;
             end
-
-            obj.bladerf.set_status(rv);
-            obj.bladerf.check('bladerf_sync_rx');
 
             % Deinterleve and scale to [-1.0, 1.0).
             samples = (double(s16(1:2:end)) + double(s16(2:2:end))*1j) ./ 2048.0;
@@ -406,15 +388,14 @@ classdef bladeRF_XCVR < handle
             s16(1:2:end) = samples(1:2:end) .* 2047.0;
             s16(2:2:end) = samples(2:2:end) .* 2047.0;
 
-            rv = calllib('libbladeRF', 'bladerf_sync_tx', ...
-                         obj.bladerf.device, ...
-                         s16, ...
-                         length(samples), ...
-                         pmetad, ...
-                         timeout_ms);
+            status = calllib('libbladeRF', 'bladerf_sync_tx', ...
+                             obj.bladerf.device, ...
+                             s16, ...
+                             length(samples), ...
+                             pmetad, ...
+                             timeout_ms);
 
-            obj.bladerf.set_status(rv);
-            obj.bladerf.check('bladerf_sync_tx');
+            bladeRF.check_status('bladerf_sync_tx', status);
         end
 
         % Stop streaming and disable the module
@@ -422,13 +403,12 @@ classdef bladeRF_XCVR < handle
             %fprintf('Stopping %s module.\n', obj.direction);
 
             % Disable the module
-            [rv, ~] = calllib('libbladeRF', 'bladerf_enable_module', ...
-                              obj.bladerf.device, ...
-                              obj.module, ...
-                              false);
+            [status, ~] = calllib('libbladeRF', 'bladerf_enable_module', ...
+                                  obj.bladerf.device, ...
+                                  obj.module, ...
+                                  false);
 
-            obj.bladerf.set_status(rv);
-            obj.bladerf.check('bladerf_enable_module');
+            bladeRF.check_status('bladerf_enable_module', status);
 
             % Unlock the configuration for changing
             obj.config.unlock();

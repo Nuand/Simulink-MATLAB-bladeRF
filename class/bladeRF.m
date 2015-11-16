@@ -1,4 +1,3 @@
-%%
 % bladeRF MATLAB interface
 %
 % This object is a MATLAB wrapper around libbladeRF.
@@ -29,8 +28,7 @@
 %% Top-level bladeRF object
 classdef bladeRF < handle
     % Read-only handle properties
-    properties(Access={?bladeRF_XCVR, ?bladeRF_IQCorr, ?StreamConfig, ?bladeRF_VCTCXO})
-        status  % Device status of last call
+    properties(Access={?bladeRF_XCVR, ?bladeRF_IQCorr, ?bladeRF_VCTCXO})
         device  % Device handle
     end
 
@@ -45,17 +43,13 @@ classdef bladeRF < handle
         versions
     end
 
-    methods(Hidden)
-        function check(obj, name)
-            if obj.status ~= 0
-                msgID = strcat('bladeRF:',name) ;
-                msg = calllib('libbladeRF', 'bladerf_strerror', obj.status) ;
-                throw(MException(msgID, msg)) ;
+    methods(Static, Hidden)
+        function check_status(fn, status)
+            if status ~= 0
+                err_num = num2str(status);
+                err_str = calllib('libbladeRF', 'bladerf_strerror', status);
+                error([ 'libbladeRF error (' err_num ') in ' fn '(): ' err_str]);
             end
-        end
-
-        function set_status(obj, status)
-            obj.status = status ;
         end
     end
 
@@ -166,29 +160,29 @@ classdef bladeRF < handle
     methods
         % Constructor
         function obj = bladeRF(devstring)
-            bladeRF.load_library() ;
+            bladeRF.load_library();
 
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % Open the device
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+            % Use wildcard empty string if no device string was provided
             if nargin < 1
                 devstring = '';
             end
 
             dptr = libpointer('bladerfPtr') ;
-            obj.status = calllib('libbladeRF', 'bladerf_open',dptr, devstring) ;
+            status = calllib('libbladeRF', 'bladerf_open', dptr, devstring);
 
             % Check the return value
-            obj.check('bladeRF_open') ;
+            bladeRF.check_status('bladeRF_open', status);
 
             % Save off the device pointer
-            obj.device = dptr ;
+            obj.device = dptr;
 
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % TODO: Load/Check FPGA
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % Populate version information
@@ -206,14 +200,14 @@ classdef bladeRF < handle
 
             % FX3 firmware version
             [ver, ver_ptr] = bladeRF.empty_version();
-            obj.status = calllib('libbladeRF', 'bladerf_fw_version', dptr, ver_ptr);
-            obj.check('bladerf_fw_version');
+            status = calllib('libbladeRF', 'bladerf_fw_version', dptr, ver_ptr);
+            bladeRF.check_status('bladerf_fw_version', status);
             obj.versions.firmware = ver_ptr.value;
 
             % FPGA version
             [ver, ver_ptr] = bladeRF.empty_version();
-            obj.status = calllib('libbladeRF', 'bladerf_fpga_version', dptr, ver_ptr);
-            obj.check('bladerf_fpga_version');
+            status = calllib('libbladeRF', 'bladerf_fpga_version', dptr, ver_ptr);
+            bladeRF.check_status('bladerf_fpga_version', status);
             obj.versions.fpga = ver_ptr.value;
 
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -222,14 +216,14 @@ classdef bladeRF < handle
 
             % Serial number (Needs to be allocated >= 33 bytes)
             serial = repmat(' ', 1, 33);
-            [obj.status, ~, serial] = calllib('libbladeRF', 'bladerf_get_serial', dptr, serial);
-            obj.check('bladerf_get_serial');
+            [status, ~, serial] = calllib('libbladeRF', 'bladerf_get_serial', dptr, serial);
+            bladeRF.check_status('bladerf_get_serial', status);
             obj.info.serial = serial;
 
             % FPGA size
             fpga_size = 'BLADERF_FPGA_UNKNOWN';
-            [obj.status, ~, fpga_size] = calllib('libbladeRF', 'bladerf_get_fpga_size', dptr, fpga_size);
-            obj.check('bladerf_get_fpga_size');
+            [status, ~, fpga_size] = calllib('libbladeRF', 'bladerf_get_fpga_size', dptr, fpga_size);
+            bladeRF.check_status('bladerf_get_fpga_size', status);
 
             switch fpga_size
                 case 'BLADERF_FPGA_40KLE'
@@ -280,17 +274,16 @@ classdef bladeRF < handle
         function val = peek(obj, dev, addr)
             switch dev
                 case { 'lms', 'lms6', 'lms6002d' }
-                    x = uint8(0) ;
-                    [obj.status,~,x] = calllib('libbladeRF', 'bladerf_lms_read', obj.device, addr, x) ;
-                    obj.check('bladerf_lms_read') ;
-                    val = x ;
+                    x = uint8(0);
+                    [status, ~, x] = calllib('libbladeRF', 'bladerf_lms_read', obj.device, addr, x);
+                    bladeRF.check_status('bladerf_lms_read');
+                    val = x;
 
                 case { 'si', 'si5338' }
-                    x = uint8(0) ;
-                    [obj.status,~,x] = calllib('libbladeRF', 'bladerf_si5338_read', obj.device, addr, x) ;
-                    obj.check('bladerf_si5338_read') ;
-                    val = x ;
-
+                    x = uint8(0);
+                    [status, ~, x] = calllib('libbladeRF', 'bladerf_si5338_read', obj.device, addr, x);
+                    obj.check('bladerf_si5338_read');
+                    val = x;
             end
         end
 
@@ -298,20 +291,19 @@ classdef bladeRF < handle
         function poke(obj, dev, addr, val)
             switch dev
                 case { 'lms', 'lms6', 'lms6002d' }
-                    obj.status = calllib('libbladeRF', 'bladerf_lms_write', obj.device, addr, val) ;
-                    obj.check('bladerf_lms_write') ;
+                    status = calllib('libbladeRF', 'bladerf_lms_write', obj.device, addr, val);
+                    bladeRF.check_status('bladerf_lms_write', status);
 
                 case { 'si', 'si5338' }
-                    obj.status = calllib('libbladeRF', 'bladerf_si5338_write', obj.device, addr, val) ;
-                    bladeRF.check('bladerf_si5338_write') ;
+                    status = calllib('libbladeRF', 'bladerf_si5338_write', obj.device, addr, val);
+                    bladeRF.check_status('bladerf_si5338_write', status);
             end
         end
 
         % Load the FPGA from MATLAB
         function load_fpga(obj, filename)
-            rv = calllib('libbladeRF', 'bladerf_load_fpga', obj.device, filename) ;
-            bladeRF.check('bladerf_load_fpga', rv) ;
+            status = calllib('libbladeRF', 'bladerf_load_fpga', obj.device, filename);
+            bladeRF.check('bladerf_load_fpga', status);
         end
-
     end
 end
