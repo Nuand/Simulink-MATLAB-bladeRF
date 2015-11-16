@@ -27,7 +27,7 @@
 %
 
 %% IQ Corrections for DC offset and gain/phase imbalance
-classdef IQCorrections < handle
+classdef bladeRF_IQCorr < handle
     properties(Access = private)
         bladerf
         module
@@ -42,7 +42,7 @@ classdef IQCorrections < handle
 
     methods
         % Constructor
-        function obj = IQCorrections(dev, module, dc_i, dc_q, phase, gain)
+        function obj = bladeRF_IQCorr(dev, module, dc_i, dc_q, phase, gain)
             obj.bladerf = dev;
             obj.module  = module;
             obj.dc_i    = dc_i;

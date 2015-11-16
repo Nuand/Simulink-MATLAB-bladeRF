@@ -29,7 +29,7 @@
 %% Top-level bladeRF object
 classdef bladeRF < handle
     % Read-only handle properties
-    properties(Access={?bladeRF_XCVR, ?IQCorrections, ?StreamConfig, ?VCTCXO})
+    properties(Access={?bladeRF_XCVR, ?bladeRF_IQCorr, ?StreamConfig, ?VCTCXO})
         status  % Device status of last call
         device  % Device handle
     end

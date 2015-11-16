@@ -302,7 +302,7 @@ classdef bladeRF_XCVR < handle
                 obj.vga2 = 16;
             end
 
-            obj.corrections = IQCorrections(dev, obj.module, 0, 0, 0, 0);
+            obj.corrections = bladeRF_IQCorr(dev, obj.module, 0, 0, 0, 0);
             obj.running = false;
         end
 
