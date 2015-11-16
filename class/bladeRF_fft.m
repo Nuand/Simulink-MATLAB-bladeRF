@@ -644,8 +644,8 @@ function samplerate_Callback(hObject, ~, handles)
         val = handles.bladerf.rx.samplerate;
     end
 
-    val = min(160e3, val);
-    val = max(40e6, val);
+    val = min(40e6, val);
+    val = max(160e3, val);
 
     %fprintf('GUI request to set samplerate to: %f\n', val);
 
