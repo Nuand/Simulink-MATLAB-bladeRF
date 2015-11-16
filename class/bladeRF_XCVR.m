@@ -288,7 +288,7 @@ classdef bladeRF_XCVR < handle
             end
 
             % Setup defaults
-            obj.config = StreamConfig;
+            obj.config = bladeRF_StreamConfig;
             obj.samplerate = 3e6;
             obj.frequency = 1.0e9;
             obj.bandwidth = 1.5e6;
