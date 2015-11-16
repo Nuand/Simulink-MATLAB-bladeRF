@@ -1,5 +1,5 @@
 %%
-% XCVR - This is a submodule used by the bladeRF MATLAB wrapper.
+% bladeRF_XCVR - Transceiver object used by the bladeRF MATLAB wrapper.
 %
 % Do not use this directly.
 %
@@ -27,7 +27,7 @@
 %
 
 %% Control and configuration of transceiver properties
-classdef XCVR < handle
+classdef bladeRF_XCVR < handle
 
     properties(SetAccess = immutable)
         bladerf
@@ -271,7 +271,7 @@ classdef XCVR < handle
         end
 
         % Constructor
-        function obj = XCVR(dev, dir)
+        function obj = bladeRF_XCVR(dev, dir)
             if strcmpi(dir,'RX') == false && strcmpi(dir,'TX') == false
                 error('Invalid direction specified');
             end

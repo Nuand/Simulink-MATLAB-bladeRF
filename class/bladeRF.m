@@ -29,7 +29,7 @@
 %% Top-level bladeRF object
 classdef bladeRF < handle
     % Read-only handle properties
-    properties(Access={?XCVR, ?IQCorrections, ?StreamConfig, ?VCTCXO})
+    properties(Access={?bladeRF_XCVR, ?IQCorrections, ?StreamConfig, ?VCTCXO})
         status  % Device status of last call
         device  % Device handle
     end
@@ -260,8 +260,8 @@ classdef bladeRF < handle
             % Create transceiver chain
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-            obj.rx = XCVR(obj, 'RX') ;
-            obj.tx = XCVR(obj, 'TX') ;
+            obj.rx = bladeRF_XCVR(obj, 'RX') ;
+            obj.tx = bladeRF_XCVR(obj, 'TX') ;
         end
 
 
