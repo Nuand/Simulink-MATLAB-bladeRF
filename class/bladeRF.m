@@ -276,20 +276,6 @@ classdef bladeRF < handle
             obj.delete;
         end
 
-        % TX samples immediately
-        function ret = send(obj, x)
-            % Send something
-            disp('Sending something') ;
-            % device.send(x) ;
-        end
-
-        % RX samples immediately
-        function ret = receive(obj, n)
-            % Receive something
-            disp('Receiving something') ;
-            % ret = device.receive(x) ;
-        end
-
         % Low level peek function
         function val = peek(obj, dev, addr)
             switch dev
