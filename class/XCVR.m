@@ -188,9 +188,7 @@ classdef XCVR < handle
         % LNA
         function obj = set.lna(obj, val)
             if strcmp(obj.direction,'TX') == true
-                msgID = 'XCVR:lna' ;
-                msg = 'Cannot set LNA Gain for TX path' ;
-                throw(MException(msgID, msg)) ;
+                error('Cannot set LNA Gain for TX path.');
             end
 
             if strcmpi(val,'bypass')  == true
@@ -200,9 +198,7 @@ classdef XCVR < handle
             elseif strcmpi(val, 'max') == true
                 lna = 'BLADERF_LNA_GAIN_MAX' ;
             else
-                msgID = 'XCVR:lna' ;
-                msg = 'Valid LNA values are [BYPASS, MID, MAX]' ;
-                throw(MException(msgID, msg)) ;
+                error('Valid LNA values are [''BYPASS'', ''MID'', ''MAX''] or [0, 3, 6]');
             end
 
             [rv, ~] = calllib('libbladeRF', 'bladerf_set_lna_gain', obj.bladerf.device, lna) ;
@@ -214,9 +210,7 @@ classdef XCVR < handle
 
         function val = get.lna(obj)
             if strcmp(obj.direction,'TX') == true
-                msgID = 'XCVR:lna' ;
-                msg = 'Cannot get LNA Gain for TX path' ;
-                throw(MException(msgID, msg)) ;
+                error('Cannot get LNA Gain for TX path');
             end
             lna = 0 ;
             [rv, ~, lna] = calllib('libbladeRF', 'bladerf_get_lna_gain', obj.bladerf.device, lna) ;
@@ -250,9 +244,10 @@ classdef XCVR < handle
 
         %% Constructor
         function obj = XCVR(dev, dir)
-            if strcmp(dir,'RX') == false && strcmp(dir,'TX') == false
-                % Throw an exception
+            if strcmpi(dir,'RX') == false && strcmpi(dir,'TX') == false
+                error('Invalid direction specified');
             end
+
             % Set the direction of the transceiver
             obj.direction = dir ;
             obj.bladerf = dev ;
