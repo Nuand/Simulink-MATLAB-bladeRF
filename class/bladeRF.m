@@ -279,12 +279,6 @@ classdef bladeRF < handle
         % Low level peek function
         function val = peek(obj, dev, addr)
             switch dev
-                case { 'dac', 'trimdac' }
-                    x = uint16(0) ;
-                    [obj.status,~,x]  = calllib('libbladeRF', 'bladerf_dac_read', obj.device, x) ;
-                    obj.check('bladerf_dac_read');
-                    val = x ;
-
                 case { 'lms', 'lms6', 'lms6002d' }
                     x = uint8(0) ;
                     [obj.status,~,x] = calllib('libbladeRF', 'bladerf_lms_read', obj.device, addr, x) ;
@@ -303,10 +297,6 @@ classdef bladeRF < handle
         % Low level poke function
         function poke(obj, dev, addr, val)
             switch dev
-                case { 'dac', 'trimdac' }
-                    obj.status = calllib('libbladeRF', 'bladerf_dac_write', obj.device, val) ;
-                    obj.check('bladerf_dac_write') ;
-
                 case { 'lms', 'lms6', 'lms6002d' }
                     obj.status = calllib('libbladeRF', 'bladerf_lms_write', obj.device, addr, val) ;
                     obj.check('bladerf_lms_write') ;
