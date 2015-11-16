@@ -191,21 +191,43 @@ classdef XCVR < handle
                 error('Cannot set LNA Gain for TX path.');
             end
 
-            if strcmpi(val,'bypass')  == true
-                lna = 'BLADERF_LNA_GAIN_BYPASS' ;
-            elseif strcmpi(val, 'mid') == true
-                lna = 'BLADERF_LNA_GAIN_MID' ;
-            elseif strcmpi(val, 'max') == true
-                lna = 'BLADERF_LNA_GAIN_MAX' ;
+            valid_value = true;
+
+            if isnumeric(val)
+                switch val
+                    case 0
+                        lna_val = 'BLADERF_LNA_GAIN_BYPASS';
+
+                    case 3
+                        lna_val = 'BLADERF_LNA_GAIN_MID';
+
+                    case 6
+                        lna_val = 'BLADERF_LNA_GAIN_MAX';
+
+                    otherwise
+                        valid_value = false;
+                end
             else
-                error('Valid LNA values are [''BYPASS'', ''MID'', ''MAX''] or [0, 3, 6]');
+                if strcmpi(val,'bypass')   == true
+                    lna_val = 'BLADERF_LNA_GAIN_BYPASS' ;
+                elseif strcmpi(val, 'mid') == true
+                    lna_val = 'BLADERF_LNA_GAIN_MID' ;
+                elseif strcmpi(val, 'max') == true
+                    lna_val = 'BLADERF_LNA_GAIN_MAX' ;
+                else
+                    valid_value = false;
+                end
             end
 
-            [rv, ~] = calllib('libbladeRF', 'bladerf_set_lna_gain', obj.bladerf.device, lna) ;
-            obj.bladerf.set_status(rv) ;
-            obj.bladerf.check('bladerf_set_lna_gain') ;
-            obj.lna = val ;
-            %disp('Changed LNA') ;
+            if valid_value ~= true
+                error('Valid LNA values are [''BYPASS'', ''MID'', ''MAX''] or [0, 3, 6], respectively.');
+            else
+                [rv, ~] = calllib('libbladeRF', 'bladerf_set_lna_gain', obj.bladerf.device, lna_val);
+                obj.bladerf.set_status(rv);
+                obj.bladerf.check('bladerf_set_lna_gain');
+                obj.lna = val;
+                %disp('Changed LNA');
+            end
         end
 
         function val = get.lna(obj)
