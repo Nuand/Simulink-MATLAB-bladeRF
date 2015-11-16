@@ -36,8 +36,8 @@ classdef bladeRF_XCVR < handle
     end
 
     properties(SetAccess = private)
-        running         % Are we actively streaming samples?
-        timestamp       % Read the current timestamp value
+        running         % Denotes whether or not the module is enabled to stream samples
+        timestamp       % Provides a coarse readback of the timestamp counter
     end
 
     properties
@@ -303,14 +303,14 @@ classdef bladeRF_XCVR < handle
             end
 
             obj.corrections = IQCorrections(dev, obj.module, 0, 0, 0, 0);
-            obj.running = 0;
+            obj.running = false;
         end
 
         % Configure stream and enable module
         function start(obj)
             %fprintf('Starting %s stream.\n', obj.direction);
 
-            obj.running = 1;
+            obj.running = true;
             obj.config.lock();
 
             % Configure the sync config
@@ -432,7 +432,7 @@ classdef bladeRF_XCVR < handle
 
             % Unlock the configuration for changing
             obj.config.unlock();
-            obj.running = 0;
+            obj.running = false;
         end
     end
 end
