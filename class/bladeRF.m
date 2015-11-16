@@ -59,6 +59,21 @@ classdef bladeRF < handle
         end
     end
 
+    methods(Static)
+        % Convert RX LNA setting string to its associated numeric value
+        function [val] = str2lna(str)
+            if strcmpi(str, 'MAX') == 1
+                val = 6;
+            elseif strcmpi(str, 'MID') == 1
+                val = 3;
+            elseif strcmpi(str, 'BYPASS') == 1
+                val = 0;
+            else
+                error('Invalid RX LNA string provided')
+            end
+        end
+    end
+
     methods(Static, Access = private)
         function load_library
             % Load the library
