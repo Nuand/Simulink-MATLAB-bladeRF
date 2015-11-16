@@ -61,7 +61,7 @@ classdef bladeRF_IQCorr < handle
                               obj.bladerf.device, ...
                               obj.module, ...
                               'BLADERF_CORR_LMS_DCOFF_I', ...
-                              val);
+                              int16(val));
 
             obj.bladerf.set_status(rv);
             obj.bladerf.check('bladerf_set_correction:dc_i');
@@ -79,7 +79,7 @@ classdef bladeRF_IQCorr < handle
                               obj.bladerf.device, ...
                               obj.module, ...
                               'BLADERF_CORR_LMS_DCOFF_Q', ...
-                              val);
+                              int16(val));
 
             obj.bladerf.set_status(rv);
             obj.bladerf.check('bladerf_set_correction:dc_q');
@@ -166,7 +166,7 @@ classdef bladeRF_IQCorr < handle
                               obj.bladerf.device, ...
                               obj.module, ...
                               'BLADERF_CORR_FPGA_GAIN', ...
-                              val);
+                              int16(val));
 
             obj.bladerf.set_status(rv);
             obj.bladerf.check('bladerf_set_correction:gain');
@@ -175,7 +175,7 @@ classdef bladeRF_IQCorr < handle
         end
 
         % Read the current IQ gain correction value
-        function val = get.gain(obj)
+        function val_dbl = get.gain(obj)
             val = int16(0);
             [rv, ~, val] = calllib('libbladeRF', 'bladerf_get_correction', ...
                                     obj.bladerf.device, ...
@@ -186,9 +186,9 @@ classdef bladeRF_IQCorr < handle
             obj.bladerf.set_status(rv);
             obj.bladerf.check('bladerf_get_correction:gain');
 
-            val = val / 4096;
+            val_dbl = double(val) / 4096.0;
 
-            %fprintf('Read %s IQ gain correction value: %d\n', obj.module, val);
+            %fprintf('Read %s IQ gain correction value: %d\n', obj.module, val_dbl);
         end
     end
 end
