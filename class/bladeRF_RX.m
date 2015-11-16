@@ -22,9 +22,9 @@ classdef bladeRF_RX < matlab.System & matlab.system.mixin.Propagates
         frame_size          = 16384;    % Number of samples to receive during each simulation step
     end
 
-    properties(Logical, Nontunable)
-        xb200 = false % XB-200 Installed
-    end
+    %properties(Logical, Nontunable)
+    %    xb200 = false % XB-200 Installed
+    %end
 
     properties(Hidden, Transient)
         bandwidthSet = matlab.system.StringSet({ ...
@@ -53,7 +53,7 @@ classdef bladeRF_RX < matlab.System & matlab.system.mixin.Propagates
         function groups = getPropertyGroupsImpl
             deviceGroup = matlab.system.display.Section(...
                 'Title', 'Device', ...
-                'PropertyList', {'device_string', 'xb200'} ...
+                'PropertyList', {'device_string'} ...
             );
 
             streamGroup = matlab.system.display.Section(...
@@ -151,6 +151,7 @@ classdef bladeRF_RX < matlab.System & matlab.system.mixin.Propagates
             if overrun_occurred ~=0
                 obj.overrun(1:num_returned)     = false(num_returned, 1);
                 obj.overrun(num_returned+1:end) = true(obj.frame_size - num_returned, 1);
+                %fprintf('Overrun occurred @ t=%d\n', cputime);
             else
                 obj.overrun = false(obj.frame_size, 1);
             end
