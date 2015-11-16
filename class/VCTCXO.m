@@ -26,12 +26,8 @@
 % THE SOFTWARE.
 %
 
-%% VCTCXO trim control
-classdef VCTCXO
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Properties
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% bladeRF VCTCXO trim control
+classdef VCTCXO < handle
 
     properties(SetAccess=immutable, Hidden=true)
         bladerf
@@ -41,14 +37,12 @@ classdef VCTCXO
         stored_trim
     end
 
-    properties
+    properties(Dependent = true)
         current_trim
     end
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Property Handling
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods
+        % Write the current VCTCXO trim DAC value
         function obj = set.current_trim(obj, val)
             val_u16 = uint16(val);
             if val_u16 ~= val
@@ -60,20 +54,15 @@ classdef VCTCXO
             obj.bladerf.check('bladerf_dac_write');
         end
 
+        % Read the current VCTCXO trim DAC value
         function curr = get.current_trim(obj)
             curr = uint16(0);
             [rv, ~, curr] = calllib('libbladeRF', 'bladerf_dac_read', obj.bladerf.device, curr);
             obj.bladerf.set_status(rv);
             obj.bladerf.check('bladerf_dac_read');
         end
-    end
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Methods
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods
-
-        %% Construtor
+        % Construtor
         function obj = VCTCXO(dev)
             obj.bladerf = dev;
 
@@ -84,7 +73,6 @@ classdef VCTCXO
             obj.bladerf.set_status(rv);
             obj.bladerf.check('bladerf_get_vctcxo_trim');
             obj.stored_trim = stored;
-
         end
     end
 end
