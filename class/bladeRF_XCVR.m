@@ -36,20 +36,22 @@ classdef bladeRF_XCVR < handle
     end
 
     properties(SetAccess = private)
-        running         % Is the XCVR is actively streaming samples?
-        timestamp       % Placeholder
+        running         % Are we actively streaming samples?
+        timestamp       % Read the current timestamp value
     end
 
     properties
         config          % Stream configuration
+        corrections     % IQ corrections
+    end
+
+    properties(Dependent = true)
         samplerate      % Samplerate must be between 160kHz and 40MHz
         frequency       % Frequency must be between 240M and 3.8G
         bandwidth       % Bandwidth is discrete
         vga1            % VGA1
         vga2            % VGA2
         lna             % LNA
-
-        corrections     % IQ corrections
     end
 
     methods
