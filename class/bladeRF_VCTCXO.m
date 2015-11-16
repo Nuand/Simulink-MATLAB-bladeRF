@@ -1,5 +1,5 @@
-%%
-% VCTCXO - This is a submodule used by the bladeRF MATLAB wrapper.
+%
+% bladeRF_VCTCXO    This is a submodule used by the bladeRF MATLAB wrapper that provides access to the VCTCXO Trim settings.
 %
 % Do not use this directly.
 %
@@ -26,8 +26,7 @@
 % THE SOFTWARE.
 %
 
-% bladeRF VCTCXO trim control
-classdef VCTCXO < handle
+classdef bladeRF_VCTCXO < handle
 
     properties(SetAccess=immutable, Hidden=true)
         bladerf
@@ -63,7 +62,7 @@ classdef VCTCXO < handle
         end
 
         % Construtor
-        function obj = VCTCXO(dev)
+        function obj = bladeRF_VCTCXO(dev)
             obj.bladerf = dev;
 
             % Fetch the VCTCXO trim stored in flash
