@@ -293,19 +293,19 @@ classdef bladeRF < handle
         % Low level peek function
         function val = peek(obj, dev, addr)
             switch dev
-                case 'dac'
+                case { 'dac', 'trimdac' }
                     x = uint16(0) ;
                     [obj.status,~,x]  = calllib('libbladeRF', 'bladerf_dac_read', obj.device, x) ;
-                    obj.check('bladerf_dac_read') ;
+                    obj.check('bladerf_dac_read');
                     val = x ;
 
-                case 'lms'
+                case { 'lms', 'lms6', 'lms6002d' }
                     x = uint8(0) ;
                     [obj.status,~,x] = calllib('libbladeRF', 'bladerf_lms_read', obj.device, addr, x) ;
                     obj.check('bladerf_lms_read') ;
                     val = x ;
 
-                case 'si'
+                case { 'si', 'si5338' }
                     x = uint8(0) ;
                     [obj.status,~,x] = calllib('libbladeRF', 'bladerf_si5338_read', obj.device, addr, x) ;
                     obj.check('bladerf_si5338_read') ;
@@ -317,15 +317,15 @@ classdef bladeRF < handle
         % Low level poke function
         function poke(obj, dev, addr, val)
             switch dev
-                case 'dac'
+                case { 'dac', 'trimdac' }
                     obj.status = calllib('libbladeRF', 'bladerf_dac_write', obj.device, val) ;
                     obj.check('bladerf_dac_write') ;
 
-                case 'lms'
+                case { 'lms', 'lms6', 'lms6002d' }
                     obj.status = calllib('libbladeRF', 'bladerf_lms_write', obj.device, addr, val) ;
                     obj.check('bladerf_lms_write') ;
 
-                case 'si'
+                case { 'si', 'si5338' }
                     obj.status = calllib('libbladeRF', 'bladerf_si5338_write', obj.device, addr, val) ;
                     bladeRF.check('bladerf_si5338_write') ;
             end
