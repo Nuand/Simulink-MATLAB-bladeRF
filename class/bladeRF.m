@@ -276,13 +276,13 @@ classdef bladeRF < handle
                 case { 'lms', 'lms6', 'lms6002d' }
                     x = uint8(0);
                     [status, ~, x] = calllib('libbladeRF', 'bladerf_lms_read', obj.device, addr, x);
-                    bladeRF.check_status('bladerf_lms_read');
+                    bladeRF.check_status('bladerf_lms_read', status);
                     val = x;
 
                 case { 'si', 'si5338' }
                     x = uint8(0);
                     [status, ~, x] = calllib('libbladeRF', 'bladerf_si5338_read', obj.device, addr, x);
-                    obj.check('bladerf_si5338_read');
+                    bladeRF.check_status('bladerf_si5338_read', status);
                     val = x;
             end
         end
@@ -303,7 +303,7 @@ classdef bladeRF < handle
         % Load the FPGA from MATLAB
         function load_fpga(obj, filename)
             status = calllib('libbladeRF', 'bladerf_load_fpga', obj.device, filename);
-            bladeRF.check('bladerf_load_fpga', status);
+            bladeRF.check_status('bladerf_load_fpga', status);
         end
     end
 end
