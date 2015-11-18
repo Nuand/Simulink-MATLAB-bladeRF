@@ -39,3 +39,4 @@ clear rxs;
 %pwelch(samples, [], [], [], Fs, 'centered');
 plot(abs(samples));
 
+clear dev;

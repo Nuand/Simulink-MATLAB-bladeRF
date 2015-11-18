@@ -50,3 +50,4 @@ dev.close();
 fprintf('Done. Plotting results...\n');
 plot(1:length(samples), real(samples));
 
+clear dev;
