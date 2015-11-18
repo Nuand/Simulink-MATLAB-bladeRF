@@ -378,15 +378,15 @@ classdef bladeRF_XCVR < handle
             metad.flags = bitshift(1,0) | bitshift(1,1) | bitshift(1,2);
             metad.reserved = 0;
             metad.status = 0;
-            metad.timestamp = 0
+            metad.timestamp = 0;
             pmetad = libpointer('bladerf_metadata', metad);
 
             % Interleave and scale. We scale by 2047.0 rather than 2048.0
             % here because valid values are only [-2048, 2047]. However,
             % it's simpler to allow users to assume they can just input [-1.0, 1.0].
-            s16 = zeros(1, 2*length(samples));
-            s16(1:2:end) = samples(1:2:end) .* 2047.0;
-            s16(2:2:end) = samples(2:2:end) .* 2047.0;
+            s16 = zeros(2*length(samples), 1);
+            s16(1:2:end) = real(samples) .* 2047.0;
+            s16(2:2:end) = imag(samples) .* 2047.0;
 
             status = calllib('libbladeRF', 'bladerf_sync_tx', ...
                              obj.bladerf.device, ...
