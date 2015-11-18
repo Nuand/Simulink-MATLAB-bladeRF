@@ -258,6 +258,78 @@ classdef bladeRF < handle
             obj.tx = bladeRF_XCVR(obj, 'TX') ;
         end
 
+         % Receive samples
+        function [samples, timestamp, actual_count, underrun] = receive(obj, num_samples, timeout_ms, time)
+            if nargin < 4
+                timeout_ms = 5000;
+            end
+
+            if nargin < 5
+                time = 0;
+            end
+
+            s16 = int16(zeros(2*num_samples, 1));
+
+            metad = libstruct('bladerf_metadata');
+            metad.actual_count = 0;
+            metad.flags = bitshift(1,31);
+            metad.reserved = 0;
+            metad.status = 0;
+            metad.timestamp = time;
+            pmetad = libpointer('bladerf_metadata', metad);
+
+            underrun = false;
+
+            [status, ~, s16, ~] = calllib('libbladeRF', 'bladerf_sync_rx', ...
+                                          obj.device, ...
+                                          s16, ...
+                                          num_samples, ...
+                                          pmetad, ...
+                                          timeout_ms);
+
+            bladeRF.check_status('bladerf_sync_rx', status);
+
+            actual_count = pmetad.value.actual_count;
+            if actual_count ~= num_samples
+                underrun = true;
+            end
+
+            % Deinterleve and scale to [-1.0, 1.0).
+            samples = (double(s16(1:2:end)) + double(s16(2:2:end))*1j) ./ 2048.0;
+            timestamp = metad.timestamp;
+        end
+
+        % Transmit the provided samples
+        function transmit(obj, samples, timeout_ms)
+            if nargin < 3
+                timeout_ms = 2 * obj.tx.config.timeout_ms;
+            end
+
+            metad = libstruct('bladerf_metadata');
+            metad.actual_count = 0;
+            metad.flags = bitshift(1,0) | bitshift(1,1) | bitshift(1,2);
+            metad.reserved = 0;
+            metad.status = 0;
+            metad.timestamp = 0;
+            pmetad = libpointer('bladerf_metadata', metad);
+
+            % Interleave and scale. We scale by 2047.0 rather than 2048.0
+            % here because valid values are only [-2048, 2047]. However,
+            % it's simpler to allow users to assume they can just input
+            % samples within [-1.0, 1.0].
+            s16 = zeros(2*length(samples), 1);
+            s16(1:2:end) = real(samples) .* 2047.0;
+            s16(2:2:end) = imag(samples) .* 2047.0;
+
+            status = calllib('libbladeRF', 'bladerf_sync_tx', ...
+                             obj.device, ...
+                             s16, ...
+                             length(samples), ...
+                             pmetad, ...
+                             timeout_ms);
+
+            bladeRF.check_status('bladerf_sync_tx', status);
+        end
 
         % Destructor
         function delete(obj)

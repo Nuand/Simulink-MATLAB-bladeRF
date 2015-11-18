@@ -1,24 +1,24 @@
-classdef bladeRF_Simulink < matlab.System & ... 
+classdef bladeRF_Simulink < matlab.System & ...
                             matlab.system.mixin.Propagates & ...
                             matlab.system.mixin.CustomIcon
-    %% Properties                     
+    %% Properties
     properties
         verbosity           = 'info'    % libbladeRF verbosity
-        
+
         rx_frequency        = 915e6;    % Frequency [230e6, 3.8e9]
         rx_lna              = 6         % LNA Gain  [0, 3, 6]
         rx_vga1             = 30;       % VGA1 Gain [5, 30]
         rx_vga2             = 0;        % VGA2 Gain [0, 30]
-        
+
         tx_frequency        = 920e6;    % Frequency [230e6, 3.8e9]
         tx_vga1             = -8;       % VGA1 Gain [-35, -4]
-        tx_vga2             = 16;       % VGA1 Gain [0, 25] 
+        tx_vga2             = 16;       % VGA1 Gain [0, 25]
     end
 
     properties(Nontunable)
         device_string       = '';       % Device specification string
         loopback_mode       = 'None'    % Active loopback mode
-        
+
         rx_bandwidth        = '1.5';    % LPF Bandwidth (MHz)
         rx_samplerate       = 3e6;      % Sample rate
         rx_num_buffers      = 64;       % Number of stream buffers to use
@@ -26,7 +26,7 @@ classdef bladeRF_Simulink < matlab.System & ...
         rx_buf_size         = 16384;    % Size of each stream buffer, in samples (must be multiple of 1024)
         rx_step_size        = 16384;    % Number of samples to RX during each simulation step
         rx_timeout_ms       = 5000;     % Stream timeout (ms)
-        
+
         tx_bandwidth        = '1.5';    % LPF Bandwidth (MHz)
         tx_samplerate       = 3e6;      % Sample rate
         tx_num_buffers      = 64;       % Number of stream buffers to use
@@ -49,28 +49,28 @@ classdef bladeRF_Simulink < matlab.System & ...
             '6',    '7',    '8.75', '10',    ...
             '12',   '14',   '20',   '28'     ...
         });
-    
+
         tx_bandwidthSet = matlab.system.StringSet({ ...
             '1.5',  '1.75', '2.5',  '2.75',  ...
             '3',    '3.84', '5',    '5.5',   ...
             '6',    '7',    '8.75', '10',    ...
             '12',   '14',   '20',   '28'     ...
         });
-    
+
         loopback_modeSet = matlab.system.StringSet({
             'None', ...
             'BB_TXLPF_RXVGA2', 'BB_TXVGA1_RXVGA2', 'BB_TXLPF_RXPLF', ...
             'RF_LNA1', 'RF_LNA2', 'RF_LNA3', ...
             'Firmware'
         });
-    
+
         verbositySet = matlab.system.StringSet({
             'Verbose', 'Debug', 'Info', 'Warning', 'Critical', 'Silent' ...
         });
     end
 
     properties (Access = private)
-        device     
+        device
 
         % Cache previously set tunable values to avoid querying the device
         % for all properties when only one changes.
@@ -84,8 +84,8 @@ classdef bladeRF_Simulink < matlab.System & ...
     end
 
     %% Static Methods
-    methods (Static, Access = protected)    
-        function groups = getPropertyGroupsImpl                                         
+    methods (Static, Access = protected)
+        function groups = getPropertyGroupsImpl
             device_section = matlab.system.display.Section(...
                 'Title', 'Device', ...
                 'PropertyList', {'device_string', 'loopback_mode', 'xb200' } ...
@@ -95,51 +95,51 @@ classdef bladeRF_Simulink < matlab.System & ...
                 'Title', 'Gain', ...
                 'PropertyList', { 'rx_lna', 'rx_vga1', 'rx_vga2'} ...
             );
-                
+
             rx_stream_section = matlab.system.display.Section(...
                 'Title', 'Stream', ...
                 'PropertyList', {'rx_num_buffers', 'rx_num_transfers', 'rx_buf_size', 'rx_timeout_ms', 'rx_step_size', } ...
             );
-        
+
             rx_section_group = matlab.system.display.SectionGroup(...
                 'Title', 'RX Configuration', ...
                 'PropertyList', { 'enable_rx', 'rx_frequency', 'rx_samplerate', 'rx_bandwidth' }, ...
                 'Sections', [ rx_gain_section, rx_stream_section ] ...
             );
-        
+
             tx_gain_section = matlab.system.display.Section(...
                 'Title', 'Gain', ...
                 'PropertyList', { 'tx_vga1', 'tx_vga2'} ...
             );
-                
+
             tx_stream_section = matlab.system.display.Section(...
                 'Title', 'Stream', ...
                 'PropertyList', {'tx_num_buffers', 'tx_num_transfers', 'tx_buf_size', 'tx_timeout_ms', 'tx_step_size', } ...
             );
-        
+
             tx_section_group = matlab.system.display.SectionGroup(...
                 'Title', 'TX Configuration', ...
                 'PropertyList', { 'enable_tx', 'tx_frequency', 'tx_samplerate', 'tx_bandwidth' }, ...
                 'Sections', [ tx_gain_section, tx_stream_section ] ...
             );
-        
+
             misc_section = matlab.system.display.Section(...
                 'Title', 'Miscellaneous', ...
                 'PropertyList', {'verbosity'} ...
             );
-                 
+
             groups = [ device_section, rx_section_group, tx_section_group, misc_section ];
         end
-        
+
         function header = getHeaderImpl
-            text = 'This block provides access to a Nuand bladeRF device via libbladeRF MATLAB bindings.';                              
+            text = 'This block provides access to a Nuand bladeRF device via libbladeRF MATLAB bindings.';
             header = matlab.system.display.Header('bladeRF_Simulink', ...
                 'Title', 'bladeRF', 'Text',  text ...
             );
         end
     end
 
-    methods (Access = protected)       
+    methods (Access = protected)
         %% Output setup
         function count = getNumOutputsImpl(obj)
             if obj.enable_rx == true
@@ -147,13 +147,13 @@ classdef bladeRF_Simulink < matlab.System & ...
             else
                 count = 0;
             end
-            
+
             if obj.enable_tx == true
                 count = count + 1;
             end
         end
-        
-        function varargout = getOutputNamesImpl(obj)           
+
+        function varargout = getOutputNamesImpl(obj)
             if obj.enable_rx == true
                 varargout{1} = 'RX Samples';
                 varargout{2} = 'RX Overrun';
@@ -161,12 +161,12 @@ classdef bladeRF_Simulink < matlab.System & ...
             else
                 n = 1;
             end
-            
+
             if obj.enable_tx == true
                 varargout{n} = 'TX Underrun';
-            end           
+            end
         end
-        
+
         function varargout = getOutputDataTypeImpl(obj)
             if obj.enable_rx == true
                 varargout{1} = 'double';    % RX Samples
@@ -175,10 +175,10 @@ classdef bladeRF_Simulink < matlab.System & ...
             else
                 n = 1;
             end
-            
+
             if obj.enable_tx == true
                 varargout{n} = 'logical';   % TX Underrun
-            end   
+            end
         end
 
         function varargout = getOutputSizeImpl(obj)
@@ -189,7 +189,7 @@ classdef bladeRF_Simulink < matlab.System & ...
             else
                 n = 1;
             end
-            
+
             if obj.enable_tx == true
                 varargout{n} = [1 1];                 % TX Underrun
             end
@@ -203,7 +203,7 @@ classdef bladeRF_Simulink < matlab.System & ...
             else
                 n = 1;
             end
-            
+
             if obj.enable_tx == true
                 varargout{n} = false;   % TX Underrun
             end
@@ -217,12 +217,12 @@ classdef bladeRF_Simulink < matlab.System & ...
             else
                 n = 1;
             end
-            
+
             if obj.enable_tx == true
                 varargout{n} = true;    % TX Underrun
             end
         end
-         
+
         %% Input setup
         function count = getNumInputsImpl(obj)
             if obj.enable_tx == true
@@ -231,7 +231,7 @@ classdef bladeRF_Simulink < matlab.System & ...
                 count = 0;
             end
         end
-        
+
         function varargout = getInputNamesImpl(obj)
             if obj.enable_tx == true
                 varargout{1} = 'TX Samples';
@@ -239,7 +239,7 @@ classdef bladeRF_Simulink < matlab.System & ...
                 varargout = [];
             end
         end
-        
+
         function varargout = getInputDataTypeImpl(obj)
             if obj.enable_tx == true
                 varargout{1} = 'double'; % TX Samples
@@ -247,7 +247,7 @@ classdef bladeRF_Simulink < matlab.System & ...
                 varargout = [];
             end
         end
-        
+
         function varargout = getInputSizeImpl(obj)
             if obj.enable_tx
                 varargout{1} = [obj.tx_step_size 1]; % TX Samples
@@ -255,7 +255,7 @@ classdef bladeRF_Simulink < matlab.System & ...
                 varargout = [];
             end
         end
-        
+
         function varargout = isInputComplexImpl(obj)
             if obj.enable_tx
                 varargout{1} = true; % TX Samples
@@ -269,14 +269,14 @@ classdef bladeRF_Simulink < matlab.System & ...
                 varargout{1} = true; % TX Samples
             else
                 varargout = [];
-            end 
-        end        
+            end
+        end
 
-        %% Property and Execution Handlers         
+        %% Property and Execution Handlers
         function icon = getIconImpl(~)
             icon = sprintf('Nuand\nbladeRF');
         end
-        
+
         function setupImpl(obj)
             obj.device = bladeRF(obj.device_string);
 
@@ -314,16 +314,16 @@ classdef bladeRF_Simulink < matlab.System & ...
         % Perform a read of received samples and an 'overrun' array that denotes whether
         % the associated samples is invalid due to a detected overrun.
         function [rx_samples, rx_overrun] = stepImpl(obj)
-            
+
             if obj.enable_rx == true
                 if obj.device.rx.running == false
                     obj.device.rx.start();
                 end
-                
-                [rx_samples, ~, rx_overrun] = obj.device.rx.receive(obj.rx_step_size, 2 * obj.rx_timeout_ms, 0);
+
+                [rx_samples, ~, ~, rx_overrun] = obj.device.receive(obj.rx_step_size);
             end
-                                
-            if obj.enable_tx == true            
+
+            if obj.enable_tx == true
                 if obj.device.tx.running == false
                     obj.device.tx.start();
                 end
@@ -356,14 +356,14 @@ classdef bladeRF_Simulink < matlab.System & ...
                 obj.curr_rx_vga2   = obj.device.rx.vga2;
                 disp('Updated RX VGA2 gain');
             end
-            
+
             %% TX Properties
             if isChangedProperty(obj, 'tx_frequency') && obj.tx_frequency ~= obj.curr_tx_frequency
                 obj.device.tx.frequency = obj.tx_frequency;
                 obj.curr_tx_frequency   = obj.device.rx.frequency;
                 disp('Updated TX frequency');
             end
-            
+
             if isChangedProperty(obj, 'tx_vga1') && obj.tx_vga1 ~= obj.curr_tx_vga1
                 obj.device.tx.vga1 = obj.vga1;
                 obj.curr_tx_vga1   = obj.device.tx.vga1;
@@ -375,14 +375,14 @@ classdef bladeRF_Simulink < matlab.System & ...
                 obj.curr_tx_vga2   = obj.device.tx.vga2;
                 disp('Updated TX VGA2 gain');
             end
-            
+
         end
-        
+
         function validatePropertiesImpl(obj)
             if obj.enable_rx == false && obj.enable_tx == false
                 warning('Neither bladeRF RX or TX is enabled. One or both should be enabled.');
             end
-            
+
             %% Validate RX properties
             if obj.rx_num_buffers < 1
                 error('rx_num_buffers must be > 0.');
@@ -431,7 +431,7 @@ classdef bladeRF_Simulink < matlab.System & ...
             elseif obj.rx_vga2 > 30
                 error('rx_vga2 gain must be <= 30.');
             end
-                
+
             %% Validate TX Properties
             if obj.tx_num_buffers < 1
                 error('tx_num_buffers must be > 0.');

@@ -397,8 +397,8 @@ function actionbutton_Callback(hObject, ~, handles)
 
             while run == 1
 
-                [samples(:), ~, overrun] = ...
-                    handles.bladerf.rx.receive(num_samples, 5000, 0);
+                [samples(:), ~, ~, overrun] = ...
+                    handles.bladerf.receive(num_samples);
 
                 if overrun
                     print_overrun = get_print_overruns(hObject);
