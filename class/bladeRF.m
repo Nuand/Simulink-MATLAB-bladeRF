@@ -110,23 +110,25 @@ classdef bladeRF < handle
 
     methods(Static)
         function devs = devices
-            bladeRF.load_library() ;
+            bladeRF.load_library();
             pdevlist = libpointer('bladerf_devinfoPtr') ;
-            [rv, ~] = calllib('libbladeRF', 'bladerf_get_device_list', pdevlist) ;
-            if rv < 0
-                error('bladeRF:devices', strcat('Error retrieving devices: ', calllib('libbladeRF', 'bladerf_strerror', rv))) ;
+            [count, ~] = calllib('libbladeRF', 'bladerf_get_device_list', pdevlist);
+            if count < 0
+                error('bladeRF:devices', strcat('Error retrieving devices: ', calllib('libbladeRF', 'bladerf_strerror', rv)));
             end
 
-            if rv > 0
-                for x=0:rv-1
-                    ptr = pdevlist+x ;
-                    devs(x+1) = ptr.Value ;
-                    devs(x+1).serial = char(devs(x+1).serial(1:end-1)) ;
+            if count > 0
+                devs = repmat(struct('backend', [], 'serial', [], 'usb_bus', [], 'usb_addr', [], 'instance', []), 1, count);
+                for x = 0:(count-1)
+                    ptr = pdevlist+x;
+                    devs(x+1) = ptr.Value;
+                    devs(x+1).serial = char(devs(x+1).serial(1:end-1));
                 end
             else
-                devs = [] ;
+                devs = [];
             end
-            calllib('libbladeRF', 'bladerf_free_device_list', pdevlist) ;
+
+            calllib('libbladeRF', 'bladerf_free_device_list', pdevlist);
         end
 
         %% Set libbladeRF's log level. Options are: verbose, debug, info, error, warning, critical, silent
@@ -194,18 +196,18 @@ classdef bladeRF < handle
             obj.versions.matlab.patch = 0 ;
 
             % libbladeRF version
-            [ver, ver_ptr] = bladeRF.empty_version();
+            [~, ver_ptr] = bladeRF.empty_version();
             calllib('libbladeRF', 'bladerf_version', ver_ptr) ;
             obj.versions.lib = ver_ptr.value;
 
             % FX3 firmware version
-            [ver, ver_ptr] = bladeRF.empty_version();
+            [~, ver_ptr] = bladeRF.empty_version();
             status = calllib('libbladeRF', 'bladerf_fw_version', dptr, ver_ptr);
             bladeRF.check_status('bladerf_fw_version', status);
             obj.versions.firmware = ver_ptr.value;
 
             % FPGA version
-            [ver, ver_ptr] = bladeRF.empty_version();
+            [~, ver_ptr] = bladeRF.empty_version();
             status = calllib('libbladeRF', 'bladerf_fpga_version', dptr, ver_ptr);
             bladeRF.check_status('bladerf_fpga_version', status);
             obj.versions.fpga = ver_ptr.value;
@@ -258,7 +260,7 @@ classdef bladeRF < handle
             obj.tx = bladeRF_XCVR(obj, 'TX') ;
         end
 
-         % Receive samples
+        % Receive samples
         function [samples, timestamp, actual_count, underrun] = receive(obj, num_samples, timeout_ms, time)
             if nargin < 4
                 timeout_ms = 5000;
