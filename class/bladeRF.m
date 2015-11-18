@@ -260,27 +260,76 @@ classdef bladeRF < handle
             obj.tx = bladeRF_XCVR(obj, 'TX') ;
         end
 
-        % Receive samples
-        function [samples, timestamp, actual_count, underrun] = receive(obj, num_samples, timeout_ms, time)
-            if nargin < 4
-                timeout_ms = 5000;
+
+        function [samples, timestamp_out, actual_count, overrun] = receive(obj, num_samples, timeout_ms, timestamp_in)
+            % RX samples 'now' or at a future timestamp
+            %
+            %   bladeRF/receive(4096)                   Receive 4096 samples
+            %
+            %   bladeRF/receive(1e6, 3000, 12345678)    Receive 1 million samples at RX
+            %                                           timestamp 12345678, with a
+            %                                           3 second timeout.
+            %
+            % Preconditions:
+            %   The bladeRF receiver has been previously configured via the
+            %   parameters in bladeRF.rx.config (the defaults may suffice),
+            %   and bladeRF.rx.start() has been called.
+            %
+            % Inputs:
+            %   num_samples     Number of samples to receive
+            %
+            %   timeout_ms      Reception operation timeout, in ms. 0 implies no timeout.
+            %                   Default = 2 * bladeRF.rx.config.timeout_ms
+            %
+            %   timestamp_in    Timestamp to receive sample at. 0 implies "NOW." Default=0.
+            %
+            % Outputs:
+            %
+            %   samples         Received complex samples with real and imaginary component
+            %                   amplitudes within [-1.0, 1.0]. These samples should be
+            %                   contiguous if `overrun` is false. If `overrun`
+            %                   is true, a discontinuty may have occurred and
+            %                   only the first `actual_count` samples are
+            %                   contiguous and valid.
+            %
+            %   timestamp_out   Timestamp of first sample in `samples`.
+            %
+            %   actual_count    Set to `num_samples` if no overrun occurred,
+            %                   or the number of valid samples if an overrun
+            %                   was detected.
+            %
+            %   overrun         Set to `true` if an overrun was detected
+            %                   in this group of samples, and `false` otherwise.
+            %
+            % See also: bladeRF_XCVR/start, bladeRF_StreamConfig
+
+            if nargin < 3
+                timeout_ms = 2 * obj.rx.config.timeout_ms;
             end
 
-            if nargin < 5
-                time = 0;
+            if nargin < 4
+                timestamp_in = 0;
             end
 
             s16 = int16(zeros(2*num_samples, 1));
 
             metad = libstruct('bladerf_metadata');
             metad.actual_count = 0;
-            metad.flags = bitshift(1,31);
-            metad.reserved = 0;
-            metad.status = 0;
-            metad.timestamp = time;
+            metad.reserved     = 0;
+            metad.status       = 0;
+
+            % RX 'NOW'
+            if timestamp_in == 0
+                metad.flags = bitshift(1,31);
+            else
+                metad.flags = 0;
+            end
+
+            metad.timestamp = timestamp_in;
+
             pmetad = libpointer('bladerf_metadata', metad);
 
-            underrun = false;
+            overrun = false;
 
             [status, ~, s16, ~] = calllib('libbladeRF', 'bladerf_sync_rx', ...
                                           obj.device, ...
@@ -293,12 +342,12 @@ classdef bladeRF < handle
 
             actual_count = pmetad.value.actual_count;
             if actual_count ~= num_samples
-                underrun = true;
+                overrun = true;
             end
 
             % Deinterleve and scale to [-1.0, 1.0).
             samples = (double(s16(1:2:end)) + double(s16(2:2:end))*1j) ./ 2048.0;
-            timestamp = metad.timestamp;
+            timestamp_out = metad.timestamp;
         end
 
         % Transmit the provided samples
