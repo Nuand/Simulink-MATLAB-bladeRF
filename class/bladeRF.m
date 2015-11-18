@@ -262,13 +262,16 @@ classdef bladeRF < handle
 
 
         function [samples, timestamp_out, actual_count, overrun] = receive(obj, num_samples, timeout_ms, timestamp_in)
-            % RX samples 'now' or at a future timestamp
+            % bladeRF.receive   RX samples 'now' or at a future timestamp
             %
-            %   bladeRF/receive(4096)                   Receive 4096 samples
+            %  [samples, timestamp_out, actual_count, overrun] = ...
+            %       bladeRF.receive(num_samples, timeout_ms, timestamp_in)
             %
-            %   bladeRF/receive(1e6, 3000, 12345678)    Receive 1 million samples at RX
-            %                                           timestamp 12345678, with a
-            %                                           3 second timeout.
+            %   samples = bladeRF.receive(4096) immediately receives 4096 samples.
+            %
+            %   [samples, ~, ~, overrun] = bladeRF.receive(1e6, 3000, 12345678) receives
+            %   1 million samples at RX timestamp 12345678, with a 3 second timeout,
+            %   and fetches the overrun flag.
             %
             % Preconditions:
             %   The bladeRF receiver has been previously configured via the
@@ -281,7 +284,7 @@ classdef bladeRF < handle
             %   timeout_ms      Reception operation timeout, in ms. 0 implies no timeout.
             %                   Default = 2 * bladeRF.rx.config.timeout_ms
             %
-            %   timestamp_in    Timestamp to receive sample at. 0 implies "NOW." Default=0.
+            %   timestamp_in    Timestamp to receive sample at. 0 implies "now." Default=0.
             %
             % Outputs:
             %
@@ -318,8 +321,8 @@ classdef bladeRF < handle
             metad.reserved     = 0;
             metad.status       = 0;
 
-            % RX 'NOW'
             if timestamp_in == 0
+                % BLADERF_META_FLAG_RX_NOW
                 metad.flags = bitshift(1,31);
             else
                 metad.flags = 0;
@@ -350,25 +353,96 @@ classdef bladeRF < handle
             timestamp_out = metad.timestamp;
         end
 
-        % Transmit the provided samples
-        function transmit(obj, samples, timeout_ms)
+        function transmit(obj, samples, timeout_ms, timestamp, sob, eob)
+            % bladeRF.transmit     TX samples as part of a stream or as a burst
+            %
+            % bladeRF.transmit(samples, timeout_ms, timestamp, sob, eob)
+            %
+            % bladeRF.transmit(samples) transmits samples as part of a larger
+            % stream. When calling this function in this manner, the caller
+            % is resonsible for ensuring the final transmit() call provides
+            % 3 or more 0+0j samples to ensure the TX DAC returns to 0+0j
+            % between the final sample and the bladeRF.tx.stop() call.
+            %
+            % bladeRF.transmit(samples, 3000, 0, 1, 1) immediately transmits
+            % a single burst of samples with a 3s timeout. The use of the
+            % sob and eob flags ensures the end of the burst will be
+            % zero padded by libbladeRF in order to hold the TX DAC at
+            % 0+0j after the burst completes.
+            %
+            % Preconditions:
+            %   The bladeRF transmitter has been previously configured via
+            %   parameters in bladeRF.tx.config (the defaults may suffice),
+            %   and bladeRF.tx.start() has been called.
+            %
+            % Inputs:
+            %   samples     Complex samples to transmit. The amplitude of the real and
+            %               imaginary components are expected to be within [-1.0, 1.0].
+            %
+            %   timeout_ms  Timeout for transmission function call. 0 implies no timeout.
+            %               Default = 2 * bladeRF.tx.config.timeout_ms
+            %
+            %   timestamp   Timestamp counter value at which to transmit samples.
+            %               0 implies "now."
+            %
+            %   sob         "Start of burst" flag. This informs libbladeRF
+            %               to consider all provided samples to be within
+            %               a burst until an eob flags is provided.
+            %
+            %   eob         "End of burst" flag. This informs libbladeRF
+            %               that after the provided samples, the burst
+            %               should be ended. libbladeRF will zero-pad
+            %               the remainder of a buffer to ensure that
+            %               TX DAC is held at 0+0j after a burst.
+            %
+            % For more information about utilizing timestamps and bursts, see the
+            % "TX with metadata" topic in the libbladeRF API documentation:
+            %
+            %               http://www.nuand.com/libbladeRF-doc
+            %
+
             if nargin < 3
                 timeout_ms = 2 * obj.tx.config.timeout_ms;
             end
 
+            if nargin < 4
+                timestamp = 0;
+            end
+
+            if nargin < 6
+                sob = 1;
+                eob = 1;
+            end
+
             metad = libstruct('bladerf_metadata');
             metad.actual_count = 0;
-            metad.flags = bitshift(1,0) | bitshift(1,1) | bitshift(1,2);
-            metad.reserved = 0;
-            metad.status = 0;
-            metad.timestamp = 0;
+            metad.reserved     = 0;
+            metad.status       = 0;
+            metad.flag         = 0;
+
+            if timestamp == 0
+                % BLADERF_META_FLAG_TX_NOW
+                metad.flags = bitor(metad.flags, bitshift(1, 2));
+            end
+            metad.timestamp = timestamp;
+
+            if sob ~= 0
+                % BLADERF_META_FLAG_TX_BURST_START
+                metad.flags = bitor(metad.flags, bitshift(1, 0));
+            end
+
+            if eob ~= 0
+                % BLADERF_META_FLAG_TX_BURST_END
+                metad.flags = bitor(metad.flags, bitshift(1, 1));
+            end
+
             pmetad = libpointer('bladerf_metadata', metad);
 
             % Interleave and scale. We scale by 2047.0 rather than 2048.0
             % here because valid values are only [-2048, 2047]. However,
             % it's simpler to allow users to assume they can just input
             % samples within [-1.0, 1.0].
-            s16 = zeros(2*length(samples), 1);
+            s16 = zeros(2*length(samples), 1, 'int16');
             s16(1:2:end) = real(samples) .* 2047.0;
             s16(2:2:end) = imag(samples) .* 2047.0;
 
