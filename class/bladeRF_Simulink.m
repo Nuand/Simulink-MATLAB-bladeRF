@@ -12,7 +12,7 @@ classdef bladeRF_Simulink < matlab.System & ...
 
         tx_frequency        = 920e6;    % Frequency [230e6, 3.8e9]
         tx_vga1             = -8;       % VGA1 Gain [-35, -4]
-        tx_vga2             = 16;       % VGA1 Gain [0, 25]
+        tx_vga2             = 16;       % VGA2 Gain [0, 25]
     end
 
     properties(Nontunable)
@@ -240,38 +240,6 @@ classdef bladeRF_Simulink < matlab.System & ...
             end
         end
 
-        function varargout = getInputDataTypeImpl(obj)
-            if obj.enable_tx == true
-                varargout{1} = 'double'; % TX Samples
-            else
-                varargout = [];
-            end
-        end
-
-        function varargout = getInputSizeImpl(obj)
-            if obj.enable_tx
-                varargout{1} = [obj.tx_step_size 1]; % TX Samples
-            else
-                varargout = [];
-            end
-        end
-
-        function varargout = isInputComplexImpl(obj)
-            if obj.enable_tx
-                varargout{1} = true; % TX Samples
-            else
-                varargout = [];
-            end
-        end
-
-        function varargout = isInputFixedSizeImp(obj)
-            if obj.enable_tx == true
-                varargout{1} = true; % TX Samples
-            else
-                varargout = [];
-            end
-        end
-
         %% Property and Execution Handlers
         function icon = getIconImpl(~)
             icon = sprintf('Nuand\nbladeRF');
@@ -300,6 +268,25 @@ classdef bladeRF_Simulink < matlab.System & ...
 
             obj.device.rx.vga2       = obj.rx_vga2;
             obj.curr_rx_vga2         = obj.device.rx.vga2;
+
+            %% TX Setup
+            obj.device.tx.config.num_buffers   = obj.tx_num_buffers;
+            obj.device.tx.config.buffer_size   = obj.tx_buf_size;
+            obj.device.tx.config.num_transfers = obj.tx_num_transfers;
+            obj.device.tx.config.timeout_ms    = obj.tx_timeout_ms;
+
+            obj.device.tx.samplerate = obj.tx_samplerate;
+            obj.device.tx.bandwidth  = str2double(obj.tx_bandwidth) * 1e6;
+
+            obj.device.tx.frequency  = obj.tx_frequency;
+            obj.curr_tx_frequency    = obj.device.tx.frequency;
+
+            obj.device.tx.vga1       = obj.tx_vga1;
+            obj.curr_tx_vga1         = obj.device.tx.vga1;
+
+            obj.device.tx.vga2       = obj.tx_vga2;
+            obj.curr_tx_vga2         = obj.device.tx.vga2;
+
         end
 
         function releaseImpl(obj)
@@ -313,7 +300,8 @@ classdef bladeRF_Simulink < matlab.System & ...
 
         % Perform a read of received samples and an 'overrun' array that denotes whether
         % the associated samples is invalid due to a detected overrun.
-        function [rx_samples, rx_overrun] = stepImpl(obj)
+        function varargout = stepImpl(obj, varargin)
+            varargout = {};
 
             if obj.enable_rx == true
                 if obj.device.rx.running == false
@@ -321,12 +309,24 @@ classdef bladeRF_Simulink < matlab.System & ...
                 end
 
                 [rx_samples, ~, ~, rx_overrun] = obj.device.receive(obj.rx_step_size);
+
+                varargout{1} = rx_samples;
+                varargout{2} = rx_overrun;
+                out_idx = 3;
+            else
+                out_idx = 1;
             end
 
             if obj.enable_tx == true
                 if obj.device.tx.running == false
                     obj.device.tx.start();
                 end
+
+                obj.device.transmit(varargin{1});
+
+                % Detecting TX Underrun is not yet supported by libbladeRF.
+                % This is for future use.
+                varargout{out_idx} = false;
             end
         end
 
@@ -346,7 +346,7 @@ classdef bladeRF_Simulink < matlab.System & ...
             end
 
             if isChangedProperty(obj, 'rx_vga1') && obj.rx_vga1 ~= obj.curr_rx_vga1
-                obj.device.rx.vga1 = obj.vga1;
+                obj.device.rx.vga1 = obj.rx_vga1;
                 obj.curr_rx_vga1   = obj.device.rx.vga1;
                 disp('Updated RX VGA1 gain');
             end
@@ -365,13 +365,13 @@ classdef bladeRF_Simulink < matlab.System & ...
             end
 
             if isChangedProperty(obj, 'tx_vga1') && obj.tx_vga1 ~= obj.curr_tx_vga1
-                obj.device.tx.vga1 = obj.vga1;
+                obj.device.tx.vga1 = obj.tx_vga1;
                 obj.curr_tx_vga1   = obj.device.tx.vga1;
                 disp('Updated TX VGA1 gain');
             end
 
-            if isChangedProperty(obj, 'rx_vga2') && obj.tx_vga2 ~= obj.curr_tx_vga2
-                obj.device.rx.vga2 = obj.tx_vga2;
+            if isChangedProperty(obj, 'tx_vga2') && obj.tx_vga2 ~= obj.curr_tx_vga2
+                obj.device.tx.vga2 = obj.tx_vga2;
                 obj.curr_tx_vga2   = obj.device.tx.vga2;
                 disp('Updated TX VGA2 gain');
             end
