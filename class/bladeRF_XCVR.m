@@ -51,7 +51,7 @@ classdef bladeRF_XCVR < handle
         bandwidth       % Bandwidth is discrete
         vga1            % VGA1
         vga2            % VGA2
-        lna             % LNA
+        lna             % LNA Gain (applicable to RX only)
     end
 
     methods
@@ -71,7 +71,6 @@ classdef bladeRF_XCVR < handle
             [status, ~, ~, actual] = calllib('libbladeRF', 'bladerf_set_rational_sample_rate', obj.bladerf.device, obj.module, rate, rate);
             bladeRF.check_status('bladerf_set_rational_sample_rate', status);
 
-            retval = actual.integer + actual.num / actual.den;
             %fprintf('Set %s samplerate. Requested: %d + %d/%d, Actual: %d + %d/%d\n', ...
             %        obj.direction, ...
             %        rate.integer, rate.num, rate.den, ...
@@ -184,7 +183,7 @@ classdef bladeRF_XCVR < handle
         end
 
         % Configure the RX LNA gain
-        function obj = set.lna(obj, val)
+        function set.lna(obj, val)
             if strcmpi(obj.direction,'TX') == true
                 error('LNA gain is not applicable to the TX path');
             end
