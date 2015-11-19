@@ -43,6 +43,11 @@ classdef bladeRF < handle
         versions
     end
 
+    properties(Access=private)
+        tx_sob;
+        tx_eob;
+    end
+
     methods(Static, Hidden)
         function check_status(fn, status)
             if status ~= 0
@@ -256,8 +261,11 @@ classdef bladeRF < handle
             % Create transceiver chain
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-            obj.rx = bladeRF_XCVR(obj, 'RX') ;
-            obj.tx = bladeRF_XCVR(obj, 'TX') ;
+            obj.rx = bladeRF_XCVR(obj, 'RX');
+
+            obj.tx = bladeRF_XCVR(obj, 'TX');
+            obj.tx_sob = 1;
+            obj.tx_eob = 0;
         end
 
 
@@ -354,15 +362,15 @@ classdef bladeRF < handle
         end
 
         function transmit(obj, samples, timeout_ms, timestamp, sob, eob)
-            % bladeRF.transmit     TX samples as part of a stream or as a burst
+            % bladeRF.transmit  TX samples as part of a stream or as a burst.
             %
             % bladeRF.transmit(samples, timeout_ms, timestamp, sob, eob)
             %
             % bladeRF.transmit(samples) transmits samples as part of a larger
-            % stream. When calling this function in this manner, the caller
-            % is resonsible for ensuring the final transmit() call provides
-            % 3 or more 0+0j samples to ensure the TX DAC returns to 0+0j
-            % between the final sample and the bladeRF.tx.stop() call.
+            % stream. Under the hood, this is implemented as a single
+            % long-running burst. If successive calls are provided with a
+            % timestamp, the stream will be "padded" with 0+0j up to that
+            % timestamp.
             %
             % bladeRF.transmit(samples, 3000, 0, 1, 1) immediately transmits
             % a single burst of samples with a 3s timeout. The use of the
@@ -385,21 +393,23 @@ classdef bladeRF < handle
             %   timestamp   Timestamp counter value at which to transmit samples.
             %               0 implies "now."
             %
-            %   sob         "Start of burst" flag. This informs libbladeRF
-            %               to consider all provided samples to be within
-            %               a burst until an eob flags is provided.
+            %   sob         "Start of burst" flag. Should be `true` or `false`.
+            %               This informs libbladeRF to consider all provided
+            %               samples to be within a burst until an eob flags
+            %               is provided. This value should be `true` or `false`.
             %
             %   eob         "End of burst" flag. This informs libbladeRF
             %               that after the provided samples, the burst
             %               should be ended. libbladeRF will zero-pad
             %               the remainder of a buffer to ensure that
-            %               TX DAC is held at 0+0j after a burst.
+            %               TX DAC is held at 0+0j after a burst. This
             %
             % For more information about utilizing timestamps and bursts, see the
             % "TX with metadata" topic in the libbladeRF API documentation:
             %
             %               http://www.nuand.com/libbladeRF-doc
             %
+            tic
 
             if nargin < 3
                 timeout_ms = 2 * obj.tx.config.timeout_ms;
@@ -410,9 +420,29 @@ classdef bladeRF < handle
             end
 
             if nargin < 6
-                sob = 1;
-                eob = 1;
+                % If the user has not specified SOB/EOB flags, we'll assume
+                % they just want to stream samples and not worry about
+                % these flags. We can support this by just starting a burst
+                % that is as long as the transmission is active.
+                sob = obj.tx.sob;
+                eob = obj.tx.eob;
+
+                % Ensure the next calls are "mid-burst"
+                if obj.tx.sob == true
+                    obj.tx.sob = false;
+                end
+            else
+                % The caller has specified the end of the burst.
+                % Reset cached values to be ready to start a burst if
+                % they call transmit() later with no flags.
+                if eob == true
+                    obj.tx.sob = true;
+                    obj.tx.eob = false;
+                end
             end
+
+            assert(islogical(sob), 'Error: sob flag must be a `true` or `false` (logical type)');
+            assert(islogical(eob), 'Error: eob flag must be a `true` or `false` (logical type)');
 
             metad = libstruct('bladerf_metadata');
             metad.actual_count = 0;
@@ -421,17 +451,31 @@ classdef bladeRF < handle
             metad.flag         = 0;
 
             if timestamp == 0
-                % BLADERF_META_FLAG_TX_NOW
-                metad.flags = bitor(metad.flags, bitshift(1, 2));
+                % Start the burst "Now"
+                if sob == true
+                    % BLADERF_META_FLAG_TX_NOW
+                    metad.flags = bitor(metad.flags, bitshift(1, 2));
+                end
+            else
+                % If we're mid-burst, we need to use this flag to tell
+                % libbladeRF that we want it to zero-pad up to the
+                % specified timestamp (or at least until the end of the
+                % current internal buffer).
+                if sob == false
+                    % BLADERF_META_FLAG_TX_UPDATE_TIMESTAMP
+                    metad.flags = bitor(metad.flags, bitshift(1, 3));
+                end
             end
+
             metad.timestamp = timestamp;
 
-            if sob ~= 0
+
+            if sob == true
                 % BLADERF_META_FLAG_TX_BURST_START
                 metad.flags = bitor(metad.flags, bitshift(1, 0));
             end
 
-            if eob ~= 0
+            if eob == true
                 % BLADERF_META_FLAG_TX_BURST_END
                 metad.flags = bitor(metad.flags, bitshift(1, 1));
             end
@@ -442,9 +486,21 @@ classdef bladeRF < handle
             % here because valid values are only [-2048, 2047]. However,
             % it's simpler to allow users to assume they can just input
             % samples within [-1.0, 1.0].
-            s16 = zeros(2*length(samples), 1, 'int16');
-            s16(1:2:end) = real(samples) .* 2047.0;
-            s16(2:2:end) = imag(samples) .* 2047.0;
+            tic
+            samples = samples .* 2047;
+            toc
+
+            tic
+            s16 = zeros(2 * length(samples), 1, 'int16');
+            toc
+
+            tic
+            s16(1:2:end) = real(samples);
+            s16(2:2:end) = imag(samples);
+            toc
+
+            fprintf('SOB=%d, EOB=%d, TS=0x%s, flags=0x%s\n', ...
+                    sob, eob, dec2hex(metad.timestamp), dec2hex(metad.flags));
 
             status = calllib('libbladeRF', 'bladerf_sync_tx', ...
                              obj.device, ...

@@ -54,6 +54,11 @@ classdef bladeRF_XCVR < handle
         lna             % LNA Gain (applicable to RX only)
     end
 
+    properties(Access={?bladeRF})
+        sob             % TX Start of Burst (Applicable to TX only)
+        eob             % TX end-of-burst flag (Applicable to TX only)
+    end
+
     methods
         %% Property handling
 
@@ -297,6 +302,14 @@ classdef bladeRF_XCVR < handle
             obj.running = true;
             obj.config.lock();
 
+            % If we're starting up a TX module, reset our cached EOB/SOB
+            % flags so that we can internally take care of these if the
+            % user doesn't want to worry about them.
+            if strcmpi(obj.direction,'TX') == true
+                obj.sob = true;
+                obj.eob = false;
+            end
+
             % Configure the sync config
             [status, ~] = calllib('libbladeRF', 'bladerf_sync_config', ...
                                   obj.bladerf.device, ...
@@ -322,6 +335,15 @@ classdef bladeRF_XCVR < handle
         % Stop streaming and disable the module
         function stop(obj)
             %fprintf('Stopping %s module.\n', obj.direction);
+
+            % If the user is trying top stop "mid-burst", we'll want to
+            % end the burst to ensure the TX DAC is reset to 0+0j
+            if strcmpi(obj.direction,'TX') == true
+                if obj.sob == false && obj.eob == false
+                    obj.eob = true;
+                    obj.bladerf.transmit(0, 0, obj.sob, obj.eob);
+                end
+            end
 
             % Disable the module
             [status, ~] = calllib('libbladeRF', 'bladerf_enable_module', ...
