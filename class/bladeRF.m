@@ -409,7 +409,7 @@ classdef bladeRF < handle
             %
             %               http://www.nuand.com/libbladeRF-doc
             %
-            tic
+
 
             if nargin < 3
                 timeout_ms = 2 * obj.tx.config.timeout_ms;
@@ -486,18 +486,12 @@ classdef bladeRF < handle
             % here because valid values are only [-2048, 2047]. However,
             % it's simpler to allow users to assume they can just input
             % samples within [-1.0, 1.0].
-            tic
             samples = samples .* 2047;
-            toc
 
-            tic
             s16 = zeros(2 * length(samples), 1, 'int16');
-            toc
-
-            tic
             s16(1:2:end) = real(samples);
             s16(2:2:end) = imag(samples);
-            toc
+
 
             fprintf('SOB=%d, EOB=%d, TS=0x%s, flags=0x%s\n', ...
                     sob, eob, dec2hex(metad.timestamp), dec2hex(metad.flags));
