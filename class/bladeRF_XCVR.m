@@ -55,8 +55,8 @@ classdef bladeRF_XCVR < handle
     end
 
     properties(Access={?bladeRF})
-        sob             % TX Start of Burst (Applicable to TX only)
-        eob             % TX end-of-burst flag (Applicable to TX only)
+        sob = true      % TX Start of Burst (Applicable to TX only)
+        eob = false     % TX end-of-burst flag (Applicable to TX only)
     end
 
     methods
