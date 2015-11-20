@@ -505,11 +505,6 @@ classdef bladeRF < handle
             calllib('libbladeRF', 'bladerf_close', obj.device);
         end
 
-        % Just a convenience wrapper
-        function close(obj)
-            obj.delete;
-        end
-
         % Low level peek function
         function val = peek(obj, dev, addr)
             switch dev
