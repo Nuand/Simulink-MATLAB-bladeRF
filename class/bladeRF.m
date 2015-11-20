@@ -2,7 +2,6 @@
 %
 % This object is a MATLAB wrapper around libbladeRF.
 %
-% TODO: Summaryize API here
 
 % Copyright (c) 2015 Nuand LLC
 %
@@ -72,26 +71,26 @@ classdef bladeRF < handle
         function load_library
             % Load the library
             if libisloaded('libbladeRF') == false
-                arch = computer('arch') ;
+                arch = computer('arch');
                 switch arch
                     case 'win32'
-                        error( 'bladeRF:constructor', 'win32 not supported' ) ;
+                        error( 'bladeRF:constructor', 'win32 not supported' );
                     case 'win64'
-                        error ('bladeRF:constructor', 'win64 not supported' ) ;
+                        error ('bladeRF:constructor', 'win64 not supported' );
                     case 'glnxa64'
-                        [notfound, warnings] = loadlibrary('libbladeRF', @libbladeRF_proto, 'notempdir') ;
-                        %[notfound, warnings] = loadlibrary('libbladeRF', '/tmp/libbladeRF.h', 'notempdir') ;
+                        [notfound, warnings] = loadlibrary('libbladeRF', @libbladeRF_proto, 'notempdir');
+                        %[notfound, warnings] = loadlibrary('libbladeRF', '/tmp/libbladeRF.h', 'notempdir');
                     case 'maci64'
-                        [notfound, warnings] = loadlibrary('libbladeRF.dylib', @libbladeRF_proto, 'notempdir') ;
+                        [notfound, warnings] = loadlibrary('libbladeRF.dylib', @libbladeRF_proto, 'notempdir');
                     otherwise
                         error(strcat('Unexpected architecture: ', arch))
                 end
                 if isempty(notfound) == false
-                    error('bladeRF:loadlibrary', 'functions missing from library' ) ;
+                    error('bladeRF:loadlibrary', 'functions missing from library' );
                 end
 
                 if isempty(warnings) == false
-                    warning('bladeRF:loadlibrary', 'loadlibrary returned warning messages \n%s\n', warnings) ;
+                    warning('bladeRF:loadlibrary', 'loadlibrary returned warning messages \n%s\n', warnings);
                 end
             end
         end
@@ -111,7 +110,7 @@ classdef bladeRF < handle
     methods(Static)
         function devs = devices
             bladeRF.load_library();
-            pdevlist = libpointer('bladerf_devinfoPtr') ;
+            pdevlist = libpointer('bladerf_devinfoPtr');
             [count, ~] = calllib('libbladeRF', 'bladerf_get_device_list', pdevlist);
             if count < 0
                 error('bladeRF:devices', strcat('Error retrieving devices: ', calllib('libbladeRF', 'bladerf_strerror', rv)));
@@ -173,7 +172,7 @@ classdef bladeRF < handle
                 devstring = '';
             end
 
-            dptr = libpointer('bladerfPtr') ;
+            dptr = libpointer('bladerfPtr');
             status = calllib('libbladeRF', 'bladerf_open', dptr, devstring);
 
             % Check the return value
@@ -191,13 +190,13 @@ classdef bladeRF < handle
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
             % Version of this MATLAB code
-            obj.versions.matlab.major = 1 ;
-            obj.versions.matlab.minor = 0 ;
-            obj.versions.matlab.patch = 0 ;
+            obj.versions.matlab.major = 1;
+            obj.versions.matlab.minor = 0;
+            obj.versions.matlab.patch = 0;
 
             % libbladeRF version
             [~, ver_ptr] = bladeRF.empty_version();
-            calllib('libbladeRF', 'bladerf_version', ver_ptr) ;
+            calllib('libbladeRF', 'bladerf_version', ver_ptr);
             obj.versions.lib = ver_ptr.value;
 
             % FX3 firmware version
@@ -500,10 +499,10 @@ classdef bladeRF < handle
 
         % Destructor
         function delete(obj)
-            %disp('Delete bladeRF called') ;
+            %disp('Delete bladeRF called');
             obj.rx.stop;
             obj.tx.stop;
-            calllib('libbladeRF', 'bladerf_close', obj.device) ;
+            calllib('libbladeRF', 'bladerf_close', obj.device);
         end
 
         % Just a convenience wrapper
