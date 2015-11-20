@@ -43,11 +43,6 @@ classdef bladeRF < handle
         versions
     end
 
-    properties(Access=private)
-        tx_sob;
-        tx_eob;
-    end
-
     methods(Static, Hidden)
         function check_status(fn, status)
             if status ~= 0
@@ -262,10 +257,7 @@ classdef bladeRF < handle
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
             obj.rx = bladeRF_XCVR(obj, 'RX');
-
             obj.tx = bladeRF_XCVR(obj, 'TX');
-            obj.tx_sob = 1;
-            obj.tx_eob = 0;
         end
 
 
