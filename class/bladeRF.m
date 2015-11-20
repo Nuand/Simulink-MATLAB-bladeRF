@@ -1,7 +1,57 @@
 % bladeRF MATLAB interface
 %
-% This object is a MATLAB wrapper around libbladeRF.
+% This object is a MATLAB wrapper around libbladeRF. As such, much
+% of the documentation for the libbladeRF API is applicable. It may be
+% found here:
+%                   http://www.nuand.com/libbladeRF-doc
 %
+% The below series of steps illustrates how to perform a simple reception.
+% However, the process for configuring the device for transmission is
+% largely the same. Note the same device handle may be used to transmit and
+% receive.
+%
+% (1) Open a device handle:
+%
+%   b = bladeRF('*:serial=43b'); % Open device via first 3 serial # digits
+%
+% (2) Setup device parameters. These may be changed while the device
+%     is actively streaming.
+%
+%   b.rx.frequency  = 917.45e6;
+%   b.rx.samplerate = 5e6;
+%   b.rx.bandwidth  = 2.5e6;
+%   b.rx.lna        = 'MAX';
+%   b.rx.vga1       = 30;
+%   b.rx.vga2       = 5;
+%
+% (3) Setup stream parameters. These may NOT be changed while the device
+%     is streaming.
+%
+%   b.rx.config.num_buffers   = 64;
+%   b.rx.config.buffer_size   = 16384;
+%   b.rx.config.num_transfers = 16;
+%   b.rx.timeout_ms           = 5000;
+%
+%
+% (4) Start the module
+%
+%   b.rx.start();
+%
+% (5) Receive 0.250 seconds of samples
+%
+%  samples = b.receive(0.250 * b.rx.samplerate);
+%
+% (6) Cleanup and shutdown by stopping the RX stream and having MATLAB
+%     delete the handle object.
+%
+%  b.rx.stop();
+%  clear b;
+%
+%
+% Below is a list of submodules within the bladeRF handle. See the help
+% text of each of these for the properties and methods exposed by modules.
+%
+% See also: bladeRF_XCVR, bladeRF_VCTCXO, bladeRF_StreamConfig, bladeRF_IQCorr
 
 % Copyright (c) 2015 Nuand LLC
 %
@@ -26,6 +76,7 @@
 
 %% Top-level bladeRF object
 classdef bladeRF < handle
+
     % Read-only handle properties
     properties(Access={?bladeRF_XCVR, ?bladeRF_IQCorr, ?bladeRF_VCTCXO})
         device  % Device handle
@@ -38,11 +89,12 @@ classdef bladeRF < handle
     end
 
     properties(SetAccess=immutable)
-        info
-        versions
+        info        % Information about device properties and state
+        versions    % Device and library version information
     end
 
     methods(Static, Hidden)
+        % Test the libbladeRF status code and error out if it is != 0
         function check_status(fn, status)
             if status ~= 0
                 err_num = num2str(status);
@@ -53,8 +105,12 @@ classdef bladeRF < handle
     end
 
     methods(Static)
-        % Convert RX LNA setting string to its associated numeric value
+
         function [val] = str2lna(str)
+        % Convert RX LNA setting string to its associated numeric value.
+        %
+        %  val = bladeRF.str2lna('MAX');
+        %
             if strcmpi(str, 'MAX') == 1
                 val = 6;
             elseif strcmpi(str, 'MID') == 1
@@ -64,6 +120,96 @@ classdef bladeRF < handle
             else
                 error('Invalid RX LNA string provided')
             end
+        end
+
+        function [major, minor, patch] = version()
+        % Get the version of this MATLAB libbladeRF wrapper.
+        %
+        % [major, minor, patch] = bladeRF.version()
+        %
+            major = 0;
+            minor = 1;
+            patch = 0;
+        end
+
+        function [major, minor, patch, version_string] = library_version()
+        % Get the libbladeRF version being used.
+        %
+        % [major, minor, patch, version_string] = bladeRF.library_version()
+        %
+            bladeRF.load_library();
+
+            [~, ver_ptr] = bladeRF.empty_version();
+            calllib('libbladeRF', 'bladerf_version', ver_ptr);
+            major = ver_ptr.Value.major;
+            minor = ver_ptr.Value.minor;
+            patch = ver_ptr.Value.patch;
+            version_string = ver_ptr.Value.describe;
+        end
+
+        function devs = devices
+        % Probe the system for attached bladeRF devices.
+        %
+        % [device_list] = bladeRF.devices();
+        %
+            bladeRF.load_library();
+            pdevlist = libpointer('bladerf_devinfoPtr');
+            [count, ~] = calllib('libbladeRF', 'bladerf_get_device_list', pdevlist);
+            if count < 0
+                error('bladeRF:devices', strcat('Error retrieving devices: ', calllib('libbladeRF', 'bladerf_strerror', rv)));
+            end
+
+            if count > 0
+                devs = repmat(struct('backend', [], 'serial', [], 'usb_bus', [], 'usb_addr', [], 'instance', []), 1, count);
+                for x = 0:(count-1)
+                    ptr = pdevlist+x;
+                    devs(x+1) = ptr.Value;
+                    devs(x+1).serial = char(devs(x+1).serial(1:end-1));
+                end
+            else
+                devs = [];
+            end
+
+            calllib('libbladeRF', 'bladerf_free_device_list', pdevlist);
+        end
+
+        function log_level(level)
+        % Set libbladeRF's log level.
+        %
+        % bladeRF.log_level(level_string)
+        %
+        % Options for level_string are:
+        %   'verbose'
+        %   'debug'
+        %   'info'
+        %   'error'
+        %   'warning'
+        %   'critical'
+        %   'silent'
+        %
+            level = lower(level);
+
+            switch level
+                case 'verbose'
+                    enum_val = 'BLADERF_LOG_LEVEL_VERBOSE';
+                case 'debug'
+                    enum_val = 'BLADERF_LOG_LEVEL_DEBUG';
+                case 'info'
+                    enum_val = 'BLADERF_LOG_LEVEL_INFO';
+                case 'warning'
+                    enum_val = 'BLADERF_LOG_LEVEL_WARNING';
+                case 'error'
+                    enum_val = 'BLADERF_LOG_LEVEL_ERROR';
+                case 'critical'
+                    enum_val = 'BLADERF_LOG_LEVEL_CRITICAL';
+                case 'silent'
+                    enum_val = 'BLADERF_LOG_LEVEL_SILENT';
+                otherwise
+                    error(strcat('Invalid log level: ', level));
+            end
+
+            bladeRF.load_library();
+            calllib('libbladeRF', 'bladerf_log_set_verbosity', enum_val);
         end
     end
 
@@ -107,60 +253,27 @@ classdef bladeRF < handle
         end
     end
 
-    methods(Static)
-        function devs = devices
-            bladeRF.load_library();
-            pdevlist = libpointer('bladerf_devinfoPtr');
-            [count, ~] = calllib('libbladeRF', 'bladerf_get_device_list', pdevlist);
-            if count < 0
-                error('bladeRF:devices', strcat('Error retrieving devices: ', calllib('libbladeRF', 'bladerf_strerror', rv)));
-            end
-
-            if count > 0
-                devs = repmat(struct('backend', [], 'serial', [], 'usb_bus', [], 'usb_addr', [], 'instance', []), 1, count);
-                for x = 0:(count-1)
-                    ptr = pdevlist+x;
-                    devs(x+1) = ptr.Value;
-                    devs(x+1).serial = char(devs(x+1).serial(1:end-1));
-                end
-            else
-                devs = [];
-            end
-
-            calllib('libbladeRF', 'bladerf_free_device_list', pdevlist);
-        end
-
-        %% Set libbladeRF's log level. Options are: verbose, debug, info, error, warning, critical, silent
-        function log_level(level)
-            level = lower(level);
-
-            switch level
-                case 'verbose'
-                    enum_val = 'BLADERF_LOG_LEVEL_VERBOSE';
-                case 'debug'
-                    enum_val = 'BLADERF_LOG_LEVEL_DEBUG';
-                case 'info'
-                    enum_val = 'BLADERF_LOG_LEVEL_INFO';
-                case 'warning'
-                    enum_val = 'BLADERF_LOG_LEVEL_WARNING';
-                case 'error'
-                    enum_val = 'BLADERF_LOG_LEVEL_ERROR';
-                case 'critical'
-                    enum_val = 'BLADERF_LOG_LEVEL_CRITICAL';
-                case 'silent'
-                    enum_val = 'BLADERF_LOG_LEVEL_SILENT';
-                otherwise
-                    error(strcat('Invalid log level: ', level));
-            end
-
-            bladeRF.load_library();
-            calllib('libbladeRF', 'bladerf_log_set_verbosity', enum_val);
-        end
-    end
-
     methods
-        % Constructor
         function obj = bladeRF(devstring)
+        % Create a device handle to the bladeRF specified by devstring.
+        %
+        % device = bladeRF(devstring)
+        %
+        % The syntax for devstring may be found in the libbladeRF
+        % documentation for the bladerf_open() function. If devstring
+        % is not provided or is empty, the first available device will be
+        % used.
+        %
+        % If multiple devices are present, it is helpful to open then via
+        % their serial numbers. This can be done by specifying at least
+        % 3 characters from their serial number:
+        %
+        % device = bladeRF('*:serial=f39')
+        %
+        % Note that there can only be one active handle to a device at any
+        % given time. The device will be closed when all references to the
+        % device handle are cleared from the workspace.
+        %
             bladeRF.load_library();
 
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -188,16 +301,14 @@ classdef bladeRF < handle
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % Populate version information
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            [obj.versions.matlab.major, ...
+             obj.versions.matlab.minor, ...
+             obj.versions.matlab.patch] = bladeRF.version();
 
-            % Version of this MATLAB code
-            obj.versions.matlab.major = 1;
-            obj.versions.matlab.minor = 0;
-            obj.versions.matlab.patch = 0;
-
-            % libbladeRF version
-            [~, ver_ptr] = bladeRF.empty_version();
-            calllib('libbladeRF', 'bladerf_version', ver_ptr);
-            obj.versions.lib = ver_ptr.value;
+            [obj.versions.libbladeRF.major, ...
+             obj.versions.libbladeRF.minor, ...
+             obj.versions.libbladeRF.patch, ...
+             obj.versions.libbladeRF.string] = bladeRF.library_version();
 
             % FX3 firmware version
             [~, ver_ptr] = bladeRF.empty_version();
@@ -261,49 +372,49 @@ classdef bladeRF < handle
 
 
         function [samples, timestamp_out, actual_count, overrun] = receive(obj, num_samples, timeout_ms, timestamp_in)
-            % bladeRF.receive   RX samples 'now' or at a future timestamp
-            %
-            %  [samples, timestamp_out, actual_count, overrun] = ...
-            %       bladeRF.receive(num_samples, timeout_ms, timestamp_in)
-            %
-            %   samples = bladeRF.receive(4096) immediately receives 4096 samples.
-            %
-            %   [samples, ~, ~, overrun] = bladeRF.receive(1e6, 3000, 12345678) receives
-            %   1 million samples at RX timestamp 12345678, with a 3 second timeout,
-            %   and fetches the overrun flag.
-            %
-            % Preconditions:
-            %   The bladeRF receiver has been previously configured via the
-            %   parameters in bladeRF.rx.config (the defaults may suffice),
-            %   and bladeRF.rx.start() has been called.
-            %
-            % Inputs:
-            %   num_samples     Number of samples to receive
-            %
-            %   timeout_ms      Reception operation timeout, in ms. 0 implies no timeout.
-            %                   Default = 2 * bladeRF.rx.config.timeout_ms
-            %
-            %   timestamp_in    Timestamp to receive sample at. 0 implies "now." Default=0.
-            %
-            % Outputs:
-            %
-            %   samples         Received complex samples with real and imaginary component
-            %                   amplitudes within [-1.0, 1.0]. These samples should be
-            %                   contiguous if `overrun` is false. If `overrun`
-            %                   is true, a discontinuty may have occurred and
-            %                   only the first `actual_count` samples are
-            %                   contiguous and valid.
-            %
-            %   timestamp_out   Timestamp of first sample in `samples`.
-            %
-            %   actual_count    Set to `num_samples` if no overrun occurred,
-            %                   or the number of valid samples if an overrun
-            %                   was detected.
-            %
-            %   overrun         Set to `true` if an overrun was detected
-            %                   in this group of samples, and `false` otherwise.
-            %
-            % See also: bladeRF_XCVR/start, bladeRF_StreamConfig
+        % RX samples immediately or at a future timestamp.
+        %
+        %  [samples, timestamp_out, actual_count, overrun] = ...
+        %       bladeRF.receive(num_samples, timeout_ms, timestamp_in)
+        %
+        %   samples = bladeRF.receive(4096) immediately receives 4096 samples.
+        %
+        %   [samples, ~, ~, overrun] = bladeRF.receive(1e6, 3000, 12345678) receives
+        %   1 million samples at RX timestamp 12345678, with a 3 second timeout,
+        %   and fetches the overrun flag.
+        %
+        % Preconditions:
+        %   The bladeRF receiver has been previously configured via the
+        %   parameters in bladeRF.rx.config (the defaults may suffice),
+        %   and bladeRF.rx.start() has been called.
+        %
+        % Inputs:
+        %   num_samples     Number of samples to receive
+        %
+        %   timeout_ms      Reception operation timeout, in ms. 0 implies no timeout.
+        %                   Default = 2 * bladeRF.rx.config.timeout_ms
+        %
+        %   timestamp_in    Timestamp to receive sample at. 0 implies "now." Default=0.
+        %
+        % Outputs:
+        %
+        %   samples         Received complex samples with real and imaginary component
+        %                   amplitudes within [-1.0, 1.0]. These samples should be
+        %                   contiguous if `overrun` is false. If `overrun`
+        %                   is true, a discontinuity may have occurred and
+        %                   only the first `actual_count` samples are
+        %                   contiguous and valid.
+        %
+        %   timestamp_out   Timestamp of first sample in `samples`.
+        %
+        %   actual_count    Set to `num_samples` if no overrun occurred,
+        %                   or the number of valid samples if an overrun
+        %                   was detected.
+        %
+        %   overrun         Set to `true` if an overrun was detected
+        %                   in this group of samples, and `false` otherwise.
+        %
+        % See also: bladeRF_XCVR/start, bladeRF_StreamConfig
 
             if nargin < 3
                 timeout_ms = 2 * obj.rx.config.timeout_ms;
@@ -353,55 +464,55 @@ classdef bladeRF < handle
         end
 
         function transmit(obj, samples, timeout_ms, timestamp, sob, eob)
-            % bladeRF.transmit  TX samples as part of a stream or as a burst.
-            %
-            % bladeRF.transmit(samples, timeout_ms, timestamp, sob, eob)
-            %
-            % bladeRF.transmit(samples) transmits samples as part of a larger
-            % stream. Under the hood, this is implemented as a single
-            % long-running burst. If successive calls are provided with a
-            % timestamp, the stream will be "padded" with 0+0j up to that
-            % timestamp.
-            %
-            % bladeRF.transmit(samples, 3000, 0, 1, 1) immediately transmits
-            % a single burst of samples with a 3s timeout. The use of the
-            % sob and eob flags ensures the end of the burst will be
-            % zero padded by libbladeRF in order to hold the TX DAC at
-            % 0+0j after the burst completes.
-            %
-            % Preconditions:
-            %   The bladeRF transmitter has been previously configured via
-            %   parameters in bladeRF.tx.config (the defaults may suffice),
-            %   and bladeRF.tx.start() has been called.
-            %
-            % Inputs:
-            %   samples     Complex samples to transmit. The amplitude of the real and
-            %               imaginary components are expected to be within [-1.0, 1.0].
-            %
-            %   timeout_ms  Timeout for transmission function call. 0 implies no timeout.
-            %               Default = 2 * bladeRF.tx.config.timeout_ms
-            %
-            %   timestamp   Timestamp counter value at which to transmit samples.
-            %               0 implies "now."
-            %
-            %   sob         "Start of burst" flag. Should be `true` or `false`.
-            %               This informs libbladeRF to consider all provided
-            %               samples to be within a burst until an eob flags
-            %               is provided. This value should be `true` or `false`.
-            %
-            %   eob         "End of burst" flag. This informs libbladeRF
-            %               that after the provided samples, the burst
-            %               should be ended. libbladeRF will zero-pad
-            %               the remainder of a buffer to ensure that
-            %               TX DAC is held at 0+0j after a burst. This
-            %
-            % For more information about utilizing timestamps and bursts, see the
-            % "TX with metadata" topic in the libbladeRF API documentation:
-            %
-            %               http://www.nuand.com/libbladeRF-doc
-            %
-
-
+        % TX samples as part of a stream or as a burst immediately or at a specified timestamp.
+        %
+        % bladeRF.transmit(samples, timeout_ms, timestamp, sob, eob)
+        %
+        % bladeRF.transmit(samples) transmits samples as part of a larger
+        % stream. Under the hood, this is implemented as a single
+        % long-running burst. If successive calls are provided with a
+        % timestamp, the stream will be "padded" with 0+0j up to that
+        % timestamp.
+        %
+        % bladeRF.transmit(samples, 3000, 0, 1, 1) immediately transmits
+        % a single burst of samples with a 3s timeout. The use of the
+        % sob and eob flags ensures the end of the burst will be
+        % zero padded by libbladeRF in order to hold the TX DAC at
+        % 0+0j after the burst completes.
+        %
+        % Preconditions:
+        %   The bladeRF transmitter has been previously configured via
+        %   parameters in bladeRF.tx.config (the defaults may suffice),
+        %   and bladeRF.tx.start() has been called.
+        %
+        % Inputs:
+        %   samples     Complex samples to transmit. The amplitude of the real and
+        %               imaginary components are expected to be within [-1.0, 1.0].
+        %
+        %   timeout_ms  Timeout for transmission function call. 0 implies no timeout.
+        %               Default = 2 * bladeRF.tx.config.timeout_ms
+        %
+        %   timestamp   Timestamp counter value at which to transmit samples.
+        %               0 implies "now."
+        %
+        %   sob         "Start of burst" flag. Should be `true` or `false`.
+        %               This informs libbladeRF to consider all provided
+        %               samples to be within a burst until an eob flags
+        %               is provided. This value should be `true` or `false`.
+        %
+        %   eob         "End of burst" flag. This informs libbladeRF
+        %               that after the provided samples, the burst
+        %               should be ended. libbladeRF will zero-pad
+        %               the remainder of a buffer to ensure that
+        %               TX DAC is held at 0+0j after a burst. This
+        %
+        % For more information about utilizing timestamps and bursts, see the
+        % "TX with metadata" topic in the libbladeRF API documentation:
+        %
+        %               http://www.nuand.com/libbladeRF-doc
+        %
+        % See also: bladeRF_XCVR/start, bladeRF_StreamConfig
+        %
             if nargin < 3
                 timeout_ms = 2 * obj.tx.config.timeout_ms;
             end
@@ -497,16 +608,28 @@ classdef bladeRF < handle
             bladeRF.check_status('bladerf_sync_tx', status);
         end
 
-        % Destructor
         function delete(obj)
+        % Destructor. Stops all running stream and close the device handle.
+        %
+        % Do not call directly. Clear references to the handle from your
+        % workspace and MATLAB will call this once the last reference is
+        % cleared.
+
             %disp('Delete bladeRF called');
             obj.rx.stop;
             obj.tx.stop;
             calllib('libbladeRF', 'bladerf_close', obj.device);
         end
 
-        % Low level peek function
         function val = peek(obj, dev, addr)
+        % Read from a device register.
+        %
+        % [value] = bladeRF.peek(device, address)
+        %
+        % Device may be one of the following:
+        %   'lms6002d', 'lms6', 'lms'   - LMS6002D Transceiver registers
+        %   'si5338', 'si'              - Si5338 Clock Generator
+        %
             switch dev
                 case { 'lms', 'lms6', 'lms6002d' }
                     x = uint8(0);
@@ -522,8 +645,15 @@ classdef bladeRF < handle
             end
         end
 
-        % Low level poke function
         function poke(obj, dev, addr, val)
+        % Write to a device register.
+        %
+        % bladeRF/poke(device, address, value)
+        %
+        % Device may be one of the following:
+        %   'lms6002d', 'lms6', 'lms'   - LMS6002D Transceiver registers
+        %   'si5338', 'si'              - Si5338 Clock Generator
+        %
             switch dev
                 case { 'lms', 'lms6', 'lms6002d' }
                     status = calllib('libbladeRF', 'bladerf_lms_write', obj.device, addr, val);
@@ -535,8 +665,11 @@ classdef bladeRF < handle
             end
         end
 
-        % Load the FPGA from MATLAB
         function load_fpga(obj, filename)
+        % Load the FPGA using the provided bitstream filename.
+        %
+        % load_fpga('./path/to/hostedx40.rbf')
+        %
             status = calllib('libbladeRF', 'bladerf_load_fpga', obj.device, filename);
             bladeRF.check_status('bladerf_load_fpga', status);
         end
