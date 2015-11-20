@@ -509,6 +509,8 @@ classdef bladeRF < handle
         % Destructor
         function delete(obj)
             %disp('Delete bladeRF called') ;
+            obj.rx.stop;
+            obj.tx.stop;
             calllib('libbladeRF', 'bladerf_close', obj.device) ;
         end
 
