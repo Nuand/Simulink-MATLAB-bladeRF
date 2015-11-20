@@ -254,7 +254,7 @@ classdef bladeRF < handle
     end
 
     methods
-        function obj = bladeRF(devstring)
+        function obj = bladeRF(devstring, fpga_bitstream)
         % Create a device handle to the bladeRF specified by devstring.
         %
         % device = bladeRF(devstring)
@@ -274,6 +274,14 @@ classdef bladeRF < handle
         % given time. The device will be closed when all references to the
         % device handle are cleared from the workspace.
         %
+        % If FPGA autoloading [1] is not being used to have libbladeRF
+        % automatically load FPGA images, an FPGA bitstream filename must
+        % be provided to the constructor. For example, with a bladeRF x115:
+        %
+        % device = bladeRF(devstring, 'path/to/hostedx115.rbf');
+        %
+        % [1] https://github.com/Nuand/bladeRF/wiki/FPGA-Autoloading#Host_softwarebased
+        %
             bladeRF.load_library();
 
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -285,6 +293,11 @@ classdef bladeRF < handle
                 devstring = '';
             end
 
+            % Don't attempt to load an FPGA unless specified
+            if nargin < 2
+                fpga_bitstream = '';
+            end
+
             dptr = libpointer('bladerfPtr');
             status = calllib('libbladeRF', 'bladerf_open', dptr, devstring);
 
@@ -294,9 +307,22 @@ classdef bladeRF < handle
             % Save off the device pointer
             obj.device = dptr;
 
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            % TODO: Load/Check FPGA
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            if ~isempty(fpga_bitstream)
+                obj.load_fpga(fpga_bitstream);
+            end
+
+            % Verify we have an FPGA loaded before continuing.
+            status = calllib('libbladeRF', ...
+                             'bladerf_is_fpga_configured', obj.device);
+
+            if status < 0
+                bladeRF.check_status('bladerf_is_fpga_configured', status);
+            elseif status == 0
+                calllib('libbladeRF', 'bladerf_close', obj.device);
+                error(['No bladeRF FPGA bitstream is loaded. Place one' ...
+                       ' in an autoload location, or pass the filename' ...
+                       ' to the bladeRF constructor']);
+            end
 
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % Populate version information
