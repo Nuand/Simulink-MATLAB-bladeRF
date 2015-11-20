@@ -1,7 +1,13 @@
+% bladeRF_fft A simple bladeRF demo that receives and plots samples
 %
-% bladeRF_fft A simple demo that receives and displays samples
+% Once the GUI starts, select a device from the dropdown of available
+% devices, and then click "start" to begin streaming samples.
 %
-% TODO Summarize usage here
+% The various GUI widgets may be used to change the plot mode, frequency,
+% gains, correction values, sample rate, and LPF bandwidth.
+%
+% Note that stream settings may only be changed whe the device is not
+% actively streaming.
 
 %
 % Copyright (c) 2015 Nuand LLC
