@@ -1,7 +1,8 @@
-%%
-% StreamConfig  bladeRF stream configuration parameters.
 %
-% Do not use this directly.
+% bladeRF stream configuration parameters.
+%
+% This is a submodule of the bladeRF object. It is not intended to be
+% accessed directly, but through the top-level bladeRF object.
 %
 
 %

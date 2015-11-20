@@ -1,7 +1,8 @@
-%%
-% IQCorrections - This is a submodule used by the bladeRF MATLAB wrapper.
 %
-% Do not use this directly.
+% bladeRF IQ corrections for DC offset and IQ imbalance
+%
+% This is a submodule of the bladeRF object. It is not intended to be accessed
+% directly, but through a top-level handle to a bladeRF object.
 %
 
 %
@@ -34,10 +35,10 @@ classdef bladeRF_IQCorr < handle
     end
 
     properties(Dependent = true)
-        dc_i
-        dc_q
-        gain
-        phase
+        dc_i    % I channel DC offset compensation. Valid range is [-2048, 2048].
+        dc_q    % Q channel DC offset compensation. Valid range is [-2048, 2048].
+        gain    % IQ imbalance gain compensation. Valid range is [-1.0, 1.0].
+        phase   % IQ imbalance phase compensation. Valid range is [-10.0, 10.0] degrees.
     end
 
     methods

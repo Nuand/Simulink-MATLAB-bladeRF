@@ -1,8 +1,10 @@
 %
-% bladeRF_VCTCXO    This is a submodule used by the bladeRF MATLAB wrapper that provides access to the VCTCXO Trim settings.
+% bladeRF VCTCXO control and configuration.
 %
-% Do not use this directly.
+% This is a submodule of the bladeRF object. It is not intended to be
+% accessed directly, but through the top-level bladeRF object.
 %
+
 
 %
 % Copyright (c) 2015 Nuand LLC
@@ -33,11 +35,11 @@ classdef bladeRF_VCTCXO < handle
     end
 
     properties(SetAccess=immutable)
-        stored_trim
+        stored_trim     % VCTCXO trim DAC value stored in flash
     end
 
     properties(Dependent = true)
-        current_trim
+        current_trim    % Currently applied VCTCXO trim DAC value. Changes to this value are immediately applied, but do not overwrite the value stored in flash.
     end
 
     methods

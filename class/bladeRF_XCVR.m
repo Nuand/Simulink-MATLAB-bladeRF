@@ -1,7 +1,8 @@
-%%
-% bladeRF_XCVR - Transceiver object used by the bladeRF MATLAB wrapper.
 %
-% Do not use this directly.
+% bladeRF RX/TX control and configuration.
+%
+% This is a submodule of the bladeRF object. It is not intended to be
+% accessed directly, but through the top-level bladeRF object.
 %
 
 %
@@ -29,34 +30,34 @@
 %% Control and configuration of transceiver properties
 classdef bladeRF_XCVR < handle
 
-    properties(SetAccess = immutable)
-        bladerf
-        module
-        direction
+    properties(SetAccess = immutable, Hidden=true)
+        bladerf         % Associated bladeRF device handle
+        module          % Module specifier (as a libbladeRF enum)
+        direction       % Module direction: { 'RX', 'TX' }
     end
 
     properties(SetAccess = private)
-        running         % Denotes whether or not the module is enabled to stream samples
-        timestamp       % Provides a coarse readback of the timestamp counter
+        running         % Denotes whether or not the module is enabled to stream samples.
+        timestamp       % Provides a coarse readback of the timestamp counter.
     end
 
     properties
-        config          % Stream configuration
-        corrections     % IQ corrections
+        config          % Stream configuration. See bladeRF_StreamConfig.
+        corrections     % IQ corrections. See bladeRF_IQCorr.
     end
 
     properties(Dependent = true)
-        samplerate      % Samplerate must be between 160kHz and 40MHz
-        frequency       % Frequency must be between 240M and 3.8G
-        bandwidth       % Bandwidth is discrete
-        vga1            % VGA1
-        vga2            % VGA2
-        lna             % LNA Gain (applicable to RX only)
+        samplerate      % Samplerate. Must be within 160 kHz and 40 MHz. A 2-3 MHz minimum is suggested unless external filters are being used.
+        frequency       % Frequency. Must be within 240 MHz and 3.8 GHz,
+        bandwidth       % LPF bandwidth seting. This is rounded to the nearest of the available discrete settings. It is recommended to set this and read back the actual value.
+        vga1            % VGA1 gain. RX range: [5, 30], TX Range: [-35, -4]
+        vga2            % VGA2 gain. RX range: [0, 30], TX range: [0, 25]
+        lna             % RX LNA gain. Values: { 'BYPASS', 'MID', 'MAX' }
     end
 
     properties(Access={?bladeRF})
-        sob = true      % TX Start of Burst (Applicable to TX only)
-        eob = false     % TX end-of-burst flag (Applicable to TX only)
+        sob = true      % TX Start of Burst (Applicable to TX only.)
+        eob = false     % TX end-of-burst flag (Applicable to TX only.)
     end
 
     methods
@@ -295,8 +296,12 @@ classdef bladeRF_XCVR < handle
             obj.running = false;
         end
 
-        % Configure stream and enable module
+
         function start(obj)
+        % Apply stream configuration parameters and enable the module.
+        %
+        % bladeRF.rx.start() or bladeRF.tx.start().
+        %
             %fprintf('Starting %s stream.\n', obj.direction);
 
             obj.running = true;
@@ -331,9 +336,11 @@ classdef bladeRF_XCVR < handle
             bladeRF.check_status('bladerf_enable_module', status);
         end
 
-
-        % Stop streaming and disable the module
         function stop(obj)
+        % Stop streaming and disable the module
+        %
+        % bladeRF.rx.stop() or bladeRF.tx.stop().
+        %
             %fprintf('Stopping %s module.\n', obj.direction);
 
             % If the user is trying top stop "mid-burst", we'll want to
