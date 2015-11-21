@@ -202,18 +202,6 @@ fcns.thunkname{fcnNum}='int32voidPtrbladerf_modulebladerf_xb200_pathThunk';fcns.
 % int bladerf_xb200_get_path ( struct bladerf * dev , bladerf_module module , bladerf_xb200_path * path );
 fcns.thunkname{fcnNum}='int32voidPtrbladerf_modulevoidPtrThunk';fcns.name{fcnNum}='bladerf_xb200_get_path'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_module', 'bladerf_xb200_pathPtr'};fcnNum=fcnNum+1;
 
-% int bladerf_init_stream ( struct bladerf_stream ** stream , struct bladerf * dev , bladerf_stream_cb callback , void *** buffers , size_t num_buffers , bladerf_format format , size_t samples_per_buffer , size_t num_transfers , void * user_data );
-fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtrvoidPtrulongbladerf_formatulongulongvoidPtrThunk';fcns.name{fcnNum}='bladerf_init_stream'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerf_streamPtrPtr', 'bladerfPtr', 'FcnPtr', 'voidPtrPtrPtr', 'ulong', 'bladerf_format', 'ulong', 'ulong', 'voidPtr'};fcnNum=fcnNum+1;
-
-% int bladerf_stream ( struct bladerf_stream * stream , bladerf_module module );
-fcns.thunkname{fcnNum}='int32voidPtrbladerf_moduleThunk';fcns.name{fcnNum}='bladerf_stream'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerf_streamPtr', 'bladerf_module'};fcnNum=fcnNum+1;
-
-% int bladerf_submit_stream_buffer ( struct bladerf_stream * stream , void * buffer , unsigned int timeout_ms );
-fcns.thunkname{fcnNum}='int32voidPtrvoidPtruint32Thunk';fcns.name{fcnNum}='bladerf_submit_stream_buffer'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerf_streamPtr', 'voidPtr', 'uint32'};fcnNum=fcnNum+1;
-
-% void bladerf_deinit_stream ( struct bladerf_stream * stream );
-fcns.thunkname{fcnNum}='voidvoidPtrThunk';fcns.name{fcnNum}='bladerf_deinit_stream'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}=[]; fcns.RHS{fcnNum}={'bladerf_streamPtr'};fcnNum=fcnNum+1;
-
 % int bladerf_set_stream_timeout ( struct bladerf * dev , bladerf_module module , unsigned int timeout );
 fcns.thunkname{fcnNum}='int32voidPtrbladerf_moduleuint32Thunk';fcns.name{fcnNum}='bladerf_set_stream_timeout'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_module', 'uint32'};fcnNum=fcnNum+1;
 
