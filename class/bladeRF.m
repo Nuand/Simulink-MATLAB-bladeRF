@@ -93,6 +93,10 @@ classdef bladeRF < handle
         versions    % Device and library version information
     end
 
+    properties(Access=private)
+        initialized = false;
+    end
+
     methods(Static, Hidden)
         % Test the libbladeRF status code and error out if it is != 0
         function check_status(fn, status)
@@ -214,6 +218,13 @@ classdef bladeRF < handle
     end
 
     methods(Static, Access = private)
+        function constructor_cleanup(obj)
+            if obj.initialized == false
+                calllib('libbladeRF', 'bladerf_close', obj.device);
+                obj.device = [];
+            end
+        end
+
         function load_library
             % Load the library
             if libisloaded('libbladeRF') == false
@@ -307,8 +318,15 @@ classdef bladeRF < handle
             % Save off the device pointer
             obj.device = dptr;
 
+            % Ensure we close the device handle if we error out anywhere
+            % in this constructor.
+            cleanupObj = onCleanup(@() bladeRF.constructor_cleanup(obj));
+
             if ~isempty(fpga_bitstream)
-                obj.load_fpga(fpga_bitstream);
+                status = calllib('libbladeRF', 'bladerf_load_fpga', ...
+                                 obj.device, fpga_bitstream);
+
+                bladeRF.check_status('bladerf_load_fpga', status);
             end
 
             % Verify we have an FPGA loaded before continuing.
@@ -318,7 +336,6 @@ classdef bladeRF < handle
             if status < 0
                 bladeRF.check_status('bladerf_is_fpga_configured', status);
             elseif status == 0
-                calllib('libbladeRF', 'bladerf_close', obj.device);
                 error(['No bladeRF FPGA bitstream is loaded. Place one' ...
                        ' in an autoload location, or pass the filename' ...
                        ' to the bladeRF constructor']);
@@ -394,6 +411,8 @@ classdef bladeRF < handle
 
             obj.rx = bladeRF_XCVR(obj, 'RX');
             obj.tx = bladeRF_XCVR(obj, 'TX');
+
+            obj.initialized = true;
         end
 
 
@@ -642,9 +661,11 @@ classdef bladeRF < handle
         % cleared.
 
             %disp('Delete bladeRF called');
-            obj.rx.stop;
-            obj.tx.stop;
-            calllib('libbladeRF', 'bladerf_close', obj.device);
+            if isempty(obj.device) == false
+                obj.rx.stop;
+                obj.tx.stop;
+                calllib('libbladeRF', 'bladerf_close', obj.device);
+            end
         end
 
         function val = peek(obj, dev, addr)
@@ -689,15 +710,6 @@ classdef bladeRF < handle
                     status = calllib('libbladeRF', 'bladerf_si5338_write', obj.device, addr, val);
                     bladeRF.check_status('bladerf_si5338_write', status);
             end
-        end
-
-        function load_fpga(obj, filename)
-        % Load the FPGA using the provided bitstream filename.
-        %
-        % load_fpga('./path/to/hostedx40.rbf')
-        %
-            status = calllib('libbladeRF', 'bladerf_load_fpga', obj.device, filename);
-            bladeRF.check_status('bladerf_load_fpga', status);
         end
     end
 end
