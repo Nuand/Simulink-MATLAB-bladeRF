@@ -1,3 +1,62 @@
+% This class implements a bladeRF MATLAB System Simulink block.
+%
+% The bladeRF_Simulink block interfaces with a single bladeRF device and is
+% capable of utilizing both the transmit and receive paths on the device. The
+% block properties may be used to enable and use RX, TX, or both.
+%
+% To use this block, place a "MATLAB System" block in your Simulink Model and
+% specify "bladeRF_Simulink" for the system object name.
+%
+% Next, configure the device by double clicking on the block. Here, a few
+% groups of settings are presented:
+%  * Device             Device selection and device-wide settings
+%  * RX Configuration   RX-specific settings
+%  * TX Configuration   TX-specific settings
+%  * Miscellaneous      Other library-specific options
+%
+% Currently only "Interpreted Execution" is supported. Be sure to select
+% this in the first tab.
+%
+% In the "Device" tab, the "Device Specification String" allows one to specify
+% which device to use if multiple bladeRFs are connected.  For example, to use
+% a device with a serial number starting with a3f..., a valid device
+% specification string would be:
+%
+%           "*:serial=a3f"
+%
+% Alternatively, one can specify the "Nth" device if the block<->device
+% assignments do not matter. For two devices, one could use:
+%           "*:instance=0" and "*:instance=1"
+%
+% If left blank, this string will select the first available device.
+%
+% To enable the receive output port, check the "Enable Receiver" checkbox in
+% the "RX Configuration" tab.  Similarly to enable the transmit input port,
+% check the "Enable Transmitter" checkbox in the "TX Configuration" tab.
+%
+% See also: bladeRF
+
+% Copyright (c) 2015 Nuand LLC
+%
+% Permission is hereby granted, free of charge, to any person obtaining a copy
+% of this software and associated documentation files (the "Software"), to deal
+% in the Software without restriction, including without limitation the rights
+% to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+% copies of the Software, and to permit persons to whom the Software is
+% furnished to do so, subject to the following conditions:
+%
+% The above copyright notice and this permission notice shall be included in
+% all copies or substantial portions of the Software.
+%
+% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+% IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+% FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+% AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+% THE SOFTWARE.
+%
+
 classdef bladeRF_Simulink < matlab.System & ...
                             matlab.system.mixin.Propagates & ...
                             matlab.system.mixin.CustomIcon
@@ -86,7 +145,7 @@ classdef bladeRF_Simulink < matlab.System & ...
     %% Static Methods
     methods (Static, Access = protected)
         function groups = getPropertyGroupsImpl
-            device_section = matlab.system.display.Section(...
+            device_section_group = matlab.system.display.SectionGroup(...
                 'Title', 'Device', ...
                 'PropertyList', {'device_string', 'loopback_mode', 'xb200' } ...
             );
@@ -123,12 +182,12 @@ classdef bladeRF_Simulink < matlab.System & ...
                 'Sections', [ tx_gain_section, tx_stream_section ] ...
             );
 
-            misc_section = matlab.system.display.Section(...
+            misc_section_group = matlab.system.display.SectionGroup(...
                 'Title', 'Miscellaneous', ...
                 'PropertyList', {'verbosity'} ...
             );
 
-            groups = [ device_section, rx_section_group, tx_section_group, misc_section ];
+            groups = [ device_section_group, rx_section_group, tx_section_group, misc_section_group ];
         end
 
         function header = getHeaderImpl
