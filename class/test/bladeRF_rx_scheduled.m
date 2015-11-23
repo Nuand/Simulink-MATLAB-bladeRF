@@ -45,9 +45,8 @@ for n = 1:num_rxs
 end
 
 dev.rx.stop();
-dev.close();
+clear dev;
 
 fprintf('Done. Plotting results...\n');
 plot(1:length(samples), real(samples));
 
-clear dev;

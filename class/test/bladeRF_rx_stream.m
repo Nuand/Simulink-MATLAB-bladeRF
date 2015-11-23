@@ -30,7 +30,7 @@ for n = 1:size(rxs, 1)
 end
 
 dev.rx.stop();
-dev.close();
+clear dev;
 
 fprintf('Done. Plotting results...\n');
 rxs = rxs.';
@@ -39,4 +39,3 @@ clear rxs;
 %pwelch(samples, [], [], [], Fs, 'centered');
 plot(abs(samples));
 
-clear dev;
