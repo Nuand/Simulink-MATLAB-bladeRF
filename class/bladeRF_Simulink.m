@@ -400,7 +400,7 @@ classdef bladeRF_Simulink < matlab.System & ...
 
             if isChangedProperty(obj, 'rx_lna') && obj.rx_lna ~= obj.curr_rx_lna
                 obj.device.rx.lna = obj.rx_lna;
-                obj.rx_curr_lna   = bladeRF.str2lna(obj.device.rx.lna);
+                obj.curr_rx_lna   = bladeRF.str2lna(obj.device.rx.lna);
                 disp('Updated RX LNA gain');
             end
 
