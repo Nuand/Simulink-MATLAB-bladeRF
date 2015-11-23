@@ -242,7 +242,7 @@ classdef bladeRF_XCVR < handle
             [status, ~, lna] = calllib('libbladeRF', 'bladerf_get_lna_gain', obj.bladerf.device, val);
             bladeRF.check_status('bladerf_get_lna_gain', status);
 
-            if strcmpi(val, 'BLADERF_LNA_GAIN_BYPASS') == true
+            if strcmpi(lna, 'BLADERF_LNA_GAIN_BYPASS') == true
                 val = 'BYPASS';
             elseif strcmpi(lna, 'BLADERF_LNA_GAIN_MID') == true
                 val = 'MID';
