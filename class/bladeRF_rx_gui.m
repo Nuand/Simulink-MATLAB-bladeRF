@@ -1,4 +1,4 @@
-% bladeRF_fft A simple bladeRF demo that receives and plots samples
+% A simple bladeRF demo GUI that receives and plots samples
 %
 % Once the GUI starts, select a device from the dropdown of available
 % devices, and then click "start" to begin streaming samples.
