@@ -1,4 +1,3 @@
-%
 % bladeRF IQ corrections for DC offset and IQ imbalance
 %
 % This is a submodule of the bladeRF object. It is not intended to be accessed

@@ -1,4 +1,3 @@
-%
 % bladeRF RX/TX control and configuration.
 %
 % This is a submodule of the bladeRF object. It is not intended to be
