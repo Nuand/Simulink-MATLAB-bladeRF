@@ -330,7 +330,12 @@ classdef bladeRF_Simulink < matlab.System & ...
         end
 
         function setupImpl(obj)
+            %% Library setup
+            bladeRF.log_level(obj.verbosity);
+
+            %% Device setup
             obj.device = bladeRF(obj.device_string);
+            obj.device.loopback = obj.loopback_mode;
 
             %% RX Setup
             obj.device.rx.config.num_buffers   = obj.rx_num_buffers;
