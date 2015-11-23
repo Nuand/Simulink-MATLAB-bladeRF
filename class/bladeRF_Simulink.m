@@ -131,7 +131,7 @@ classdef bladeRF_Simulink < matlab.System & ...
     end
 
     properties (Access = private)
-        device
+        device = []
 
         % Cache previously set tunable values to avoid querying the device
         % for all properties when only one changes.
@@ -334,7 +334,13 @@ classdef bladeRF_Simulink < matlab.System & ...
             bladeRF.log_level(obj.verbosity);
 
             %% Device setup
-            obj.device = bladeRF(obj.device_string);
+            if obj.xb200 == true
+                xb = 'XB200';
+            else
+                xb = [];
+            end
+
+            obj.device = bladeRF(obj.device_string, [], xb);
             obj.device.loopback = obj.loopback_mode;
 
             %% RX Setup
@@ -472,6 +478,14 @@ classdef bladeRF_Simulink < matlab.System & ...
                 warning('Neither bladeRF RX or TX is enabled. One or both should be enabled.');
             end
 
+            if isempty(obj.device)
+                tx_min_freq = 0;
+                rx_min_freq = 0;
+            else
+                tx_min_freq = obj.device.tx.min_frequency;
+                rx_min_freq = obj.device.rx.min_frequency;
+            end
+
             %% Validate RX properties
             if obj.rx_num_buffers < 1
                 error('rx_num_buffers must be > 0.');
@@ -499,8 +513,8 @@ classdef bladeRF_Simulink < matlab.System & ...
                 error('rx_samplerate must be <= 40 MHz.')
             end
 
-            if obj.rx_frequency < 230.0e6
-                error('rx_frequency must be > 230 MHz.');
+            if obj.rx_frequency < rx_min_freq
+                error(['rx_frequency must be >= ' num2str(rx_min_freq) '.']);
             elseif obj.rx_frequency > 3.8e9
                 error('rx_frequency must be <= 3.8 GHz.');
             end
@@ -548,8 +562,8 @@ classdef bladeRF_Simulink < matlab.System & ...
                 error('tx_samplerate must be <= 40 MHz.')
             end
 
-            if obj.tx_frequency < 230.0e6
-                error('tx_frequency must be > 230 MHz.');
+            if obj.tx_frequency < tx_min_freq;
+                error(['tx_frequency must be >= ' num2str(tx_min_freq) '.']);
             elseif obj.tx_frequency > 3.8e9
                 error('tx_frequency must be <= 3.8 GHz.');
             end
