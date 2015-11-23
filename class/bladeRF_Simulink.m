@@ -395,44 +395,44 @@ classdef bladeRF_Simulink < matlab.System & ...
             if isChangedProperty(obj, 'rx_frequency') && obj.rx_frequency ~= obj.curr_rx_frequency
                 obj.device.rx.frequency = obj.rx_frequency;
                 obj.curr_rx_frequency   = obj.device.rx.frequency;
-                disp('Updated RX frequency');
+                %disp('Updated RX frequency');
             end
 
             if isChangedProperty(obj, 'rx_lna') && obj.rx_lna ~= obj.curr_rx_lna
                 obj.device.rx.lna = obj.rx_lna;
                 obj.curr_rx_lna   = bladeRF.str2lna(obj.device.rx.lna);
-                disp('Updated RX LNA gain');
+                %disp('Updated RX LNA gain');
             end
 
             if isChangedProperty(obj, 'rx_vga1') && obj.rx_vga1 ~= obj.curr_rx_vga1
                 obj.device.rx.vga1 = obj.rx_vga1;
                 obj.curr_rx_vga1   = obj.device.rx.vga1;
-                disp('Updated RX VGA1 gain');
+                %disp('Updated RX VGA1 gain');
             end
 
             if isChangedProperty(obj, 'rx_vga2') && obj.rx_vga2 ~= obj.curr_rx_vga2
                 obj.device.rx.vga2 = obj.rx_vga2;
                 obj.curr_rx_vga2   = obj.device.rx.vga2;
-                disp('Updated RX VGA2 gain');
+                %disp('Updated RX VGA2 gain');
             end
 
             %% TX Properties
             if isChangedProperty(obj, 'tx_frequency') && obj.tx_frequency ~= obj.curr_tx_frequency
                 obj.device.tx.frequency = obj.tx_frequency;
                 obj.curr_tx_frequency   = obj.device.rx.frequency;
-                disp('Updated TX frequency');
+                %disp('Updated TX frequency');
             end
 
             if isChangedProperty(obj, 'tx_vga1') && obj.tx_vga1 ~= obj.curr_tx_vga1
                 obj.device.tx.vga1 = obj.tx_vga1;
                 obj.curr_tx_vga1   = obj.device.tx.vga1;
-                disp('Updated TX VGA1 gain');
+                %disp('Updated TX VGA1 gain');
             end
 
             if isChangedProperty(obj, 'tx_vga2') && obj.tx_vga2 ~= obj.curr_tx_vga2
                 obj.device.tx.vga2 = obj.tx_vga2;
                 obj.curr_tx_vga2   = obj.device.tx.vga2;
-                disp('Updated TX VGA2 gain');
+                %disp('Updated TX VGA2 gain');
             end
 
         end
