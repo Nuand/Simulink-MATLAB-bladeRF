@@ -95,6 +95,7 @@ classdef bladeRF < handle
     properties(SetAccess=immutable)
         info        % Information about device properties and state
         versions    % Device and library version information
+        xb          % Attached expansion board
     end
 
     properties(Access=private)
@@ -323,7 +324,7 @@ classdef bladeRF < handle
     end
 
     methods
-        function obj = bladeRF(devstring, fpga_bitstream)
+        function obj = bladeRF(devstring, fpga_bitstream, xb)
         % Create a device handle to the bladeRF specified by devstring.
         %
         % device = bladeRF(devstring)
@@ -351,6 +352,13 @@ classdef bladeRF < handle
         %
         % [1] https://github.com/Nuand/bladeRF/wiki/FPGA-Autoloading#Host_softwarebased
         %
+        % To enable an expansion board, the xb parameter should be
+        % specified:
+        %
+        % device = bladeRF(devstring, [], 'xb200');
+        %
+        % Valid xb arguments are: 'xb100', 'xb200'
+        %
             bladeRF.load_library();
 
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -364,7 +372,12 @@ classdef bladeRF < handle
 
             % Don't attempt to load an FPGA unless specified
             if nargin < 2
-                fpga_bitstream = '';
+                fpga_bitstream = [];
+            end
+
+            % Don't attempt to attach an expansion board unless specified
+            if nargin < 3
+                xb = [];
             end
 
             dptr = libpointer('bladerfPtr');
@@ -459,6 +472,27 @@ classdef bladeRF < handle
             end
 
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % Expansion board
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            if isempty(xb) == false
+                switch upper(xb)
+                    case 'XB200'
+                        xb_val = 'BLADERF_XB_200';
+                    case 'XB100'
+                        xb_val = 'BLADERF_XB_100';
+                    otherwise
+                        error(['Invalid expansion board name: ' xb]);
+                end
+
+                status = calllib('libbladeRF', 'bladerf_expansion_attach', obj.device, xb_val);
+                bladeRF.check_status('bladerf_expansion_attach', status);
+
+                obj.xb = upper(xb);
+            else
+                obj.xb = 'None';
+            end
+
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % VCTCXO control
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             obj.vctcxo = bladeRF_VCTCXO(obj);
@@ -467,8 +501,8 @@ classdef bladeRF < handle
             % Create transceiver chain
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-            obj.rx = bladeRF_XCVR(obj, 'RX');
-            obj.tx = bladeRF_XCVR(obj, 'TX');
+            obj.rx = bladeRF_XCVR(obj, 'RX', xb);
+            obj.tx = bladeRF_XCVR(obj, 'TX', xb);
 
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % Default loopback mode

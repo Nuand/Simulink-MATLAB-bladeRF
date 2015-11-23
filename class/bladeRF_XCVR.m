@@ -29,17 +29,6 @@
 %% Control and configuration of transceiver properties
 classdef bladeRF_XCVR < handle
 
-    properties(SetAccess = immutable, Hidden=true)
-        bladerf         % Associated bladeRF device handle
-        module          % Module specifier (as a libbladeRF enum)
-        direction       % Module direction: { 'RX', 'TX' }
-    end
-
-    properties(SetAccess = private)
-        running         % Denotes whether or not the module is enabled to stream samples.
-        timestamp       % Provides a coarse readback of the timestamp counter.
-    end
-
     properties
         config          % Stream configuration. See bladeRF_StreamConfig.
         corrections     % IQ corrections. See bladeRF_IQCorr.
@@ -47,11 +36,25 @@ classdef bladeRF_XCVR < handle
 
     properties(Dependent = true)
         samplerate      % Samplerate. Must be within 160 kHz and 40 MHz. A 2-3 MHz minimum is suggested unless external filters are being used.
-        frequency       % Frequency. Must be within 240 MHz and 3.8 GHz,
+        frequency       % Frequency. Must be within [237.5 MHz, 3.8 GHz] when no XB-200 is attached, or [0 GHz, 3.8 GHz] when an XB-200 is attached.
         bandwidth       % LPF bandwidth seting. This is rounded to the nearest of the available discrete settings. It is recommended to set this and read back the actual value.
         vga1            % VGA1 gain. RX range: [5, 30], TX Range: [-35, -4]
         vga2            % VGA2 gain. RX range: [0, 30], TX range: [0, 25]
         lna             % RX LNA gain. Values: { 'BYPASS', 'MID', 'MAX' }
+        xb200_filter    % XB200 Filter selection. Only valid when an XB200 is attached. Options are: '50M', '144M', '222M', 'AUTO_1DB', 'AUTO_3DB', 'CUSTOM'
+    end
+
+    properties(SetAccess = immutable, Hidden=true)
+        bladerf         % Associated bladeRF device handle
+        module          % Module specifier (as a libbladeRF enum)
+        direction       % Module direction: { 'RX', 'TX' }
+        min_frequency   % Lower frequency tuning limit
+        xb200_attached; % Modify behavior due to XB200 being attached
+    end
+
+    properties(SetAccess = private)
+        running         % Denotes whether or not the module is enabled to stream samples.
+        timestamp       % Provides a coarse readback of the timestamp counter.
     end
 
     properties(Access={?bladeRF})
@@ -261,8 +264,45 @@ classdef bladeRF_XCVR < handle
             bladeRF.check_status('bladerf_get_timestamp', status);
         end
 
+        % Set the current XB200 filter
+        function set.xb200_filter(obj, filter)
+            if obj.xb200_attached == false
+                error('Cannot set XB200 filter because the handle was not initialized for use with the XB200.');
+            end
+
+            filter = upper(filter);
+            switch filter
+                case '50M'
+                case '144M'
+                case '222M'
+                case 'AUTO_1DB'
+                case 'AUTO_3DB'
+                case 'CUSTOM'
+                otherwise
+                    error(['Invalid XB200 filter: ' filter]);
+            end
+
+            filter_val = ['BLADERF_XB200_' filter ];
+            status = calllib('libbladeRF', 'bladerf_xb200_set_filterbank', obj.bladerf.device, obj.module, filter_val);
+            bladeRF.check_status('bladerf_xb200_set_filterbank', status);
+        end
+
+        % Get the current XB200 filter
+        function filter_val = get.xb200_filter(obj)
+            if obj.xb200_attached == false
+                filter_val = 'N/A';
+                return;
+            end
+
+            filter_val = 0;
+            [status, ~, filter_val] = calllib('libbladeRF', 'bladerf_xb200_get_filterbank', obj.bladerf.device, obj.module, filter_val);
+            bladeRF.check_status('bladerf_xb200_get_filterbank', status);
+
+            filter_val = strrep(filter_val, 'BLADERF_XB200_', '');
+        end
+
         % Constructor
-        function obj = bladeRF_XCVR(dev, dir)
+        function obj = bladeRF_XCVR(dev, dir, xb)
             if strcmpi(dir,'RX') == false && strcmpi(dir,'TX') == false
                 error('Invalid direction specified');
             end
@@ -274,6 +314,15 @@ classdef bladeRF_XCVR < handle
                 obj.module = 'BLADERF_MODULE_RX';
             else
                 obj.module = 'BLADERF_MODULE_TX';
+            end
+
+            if strcmpi(xb, 'XB200') == true
+                obj.min_frequency = 0;
+                obj.xb200_attached = true;
+                obj.xb200_filter = 'AUTO_3DB';
+            else
+                obj.min_frequency = 237.5e6;
+                obj.xb200_attached = false;
             end
 
             % Setup defaults
