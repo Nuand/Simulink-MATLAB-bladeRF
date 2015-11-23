@@ -290,7 +290,7 @@ classdef bladeRF_Simulink < matlab.System & ...
         end
 
         function releaseImpl(obj)
-            obj.device.close();
+            delete(obj.device);
         end
 
         function resetImpl(obj)
