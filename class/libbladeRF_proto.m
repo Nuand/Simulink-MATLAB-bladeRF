@@ -27,11 +27,29 @@ function [methodinfo,structs,enuminfo,ThunkLibName]=libbladeRF_proto
 % Setup
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-ival={cell(1,0)}; % change 0 to the actual number of functions to preallocate the data.
-structs=[];enuminfo=[];fcnNum=1;
+ival={cell(1, 105)};
+structs=[];
+enuminfo=[];
+fcnNum=1;
 fcns=struct('name',ival,'calltype',ival,'LHS',ival,'RHS',ival,'alias',ival,'thunkname', ival);
 MfilePath=fileparts(mfilename('fullpath'));
-ThunkLibName=fullfile(MfilePath,'libbladeRF_thunk_glnxa64');
+
+arch = computer('arch');
+is64_bit = true;
+switch arch
+    case 'glnxa64'
+        libname   = 'libbladeRF_thunk_glnxa64';
+        bool_type = 'bool';
+        u64_type  = 'ulong';
+    case 'win64'
+        libname   = 'libbladeRF_thunk_pcwin64';
+        bool_type = 'uint8';
+        u64_type  = 'uint64';
+    otherwise
+        error(['Unsupported architecture: ' arch]);
+end
+
+ThunkLibName=fullfile(MfilePath, libname);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Functions
@@ -53,7 +71,7 @@ fcns.thunkname{fcnNum}='int32voidPtrcstringThunk';fcns.name{fcnNum}='bladerf_ope
 fcns.thunkname{fcnNum}='voidvoidPtrThunk';fcns.name{fcnNum}='bladerf_close'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}=[]; fcns.RHS{fcnNum}={'bladerfPtr'};fcnNum=fcnNum+1;
 
 % void bladerf_set_usb_reset_on_open ( _Bool enabled );
-fcns.thunkname{fcnNum}='void_BoolThunk';fcns.name{fcnNum}='bladerf_set_usb_reset_on_open'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}=[]; fcns.RHS{fcnNum}={'bool'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}=['void' bool_type 'Thunk'];fcns.name{fcnNum}='bladerf_set_usb_reset_on_open'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}=[]; fcns.RHS{fcnNum}={bool_type};fcnNum=fcnNum+1;
 
 % void bladerf_init_devinfo ( struct bladerf_devinfo * info );
 fcns.thunkname{fcnNum}='voidvoidPtrThunk';fcns.name{fcnNum}='bladerf_init_devinfo'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}=[]; fcns.RHS{fcnNum}={'bladerf_devinfoPtr'};fcnNum=fcnNum+1;
@@ -65,16 +83,16 @@ fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get
 fcns.thunkname{fcnNum}='int32cstringvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_devinfo_from_str'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'cstring', 'bladerf_devinfoPtr'};fcnNum=fcnNum+1;
 
 % _Bool bladerf_devinfo_matches ( const struct bladerf_devinfo * a , const struct bladerf_devinfo * b );
-fcns.thunkname{fcnNum}='_BoolvoidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_devinfo_matches'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='bool'; fcns.RHS{fcnNum}={'bladerf_devinfoPtr', 'bladerf_devinfoPtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}=[bool_type 'voidPtrvoidPtrThunk'];fcns.name{fcnNum}='bladerf_devinfo_matches'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}=bool_type; fcns.RHS{fcnNum}={'bladerf_devinfoPtr', 'bladerf_devinfoPtr'};fcnNum=fcnNum+1;
 
 % _Bool bladerf_devstr_matches ( const char * dev_str , struct bladerf_devinfo * info );
-fcns.thunkname{fcnNum}='_BoolcstringvoidPtrThunk';fcns.name{fcnNum}='bladerf_devstr_matches'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='bool'; fcns.RHS{fcnNum}={'cstring', 'bladerf_devinfoPtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}=[bool_type 'cstringvoidPtrThunk'];fcns.name{fcnNum}='bladerf_devstr_matches'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}=bool_type; fcns.RHS{fcnNum}={'cstring', 'bladerf_devinfoPtr'};fcnNum=fcnNum+1;
 
 % const char * bladerf_backend_str ( bladerf_backend backend );
 fcns.thunkname{fcnNum}='cstringbladerf_backendThunk';fcns.name{fcnNum}='bladerf_backend_str'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='cstring'; fcns.RHS{fcnNum}={'bladerf_backend'};fcnNum=fcnNum+1;
 
 % int bladerf_enable_module ( struct bladerf * dev , bladerf_module m , _Bool enable );
-fcns.thunkname{fcnNum}='int32voidPtrbladerf_module_BoolThunk';fcns.name{fcnNum}='bladerf_enable_module'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_module', 'bool'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}=['int32voidPtrbladerf_module' bool_type 'Thunk'];fcns.name{fcnNum}='bladerf_enable_module'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_module', bool_type};fcnNum=fcnNum+1;
 
 % int bladerf_set_loopback ( struct bladerf * dev , bladerf_loopback l );
 fcns.thunkname{fcnNum}='int32voidPtrbladerf_loopbackThunk';fcns.name{fcnNum}='bladerf_set_loopback'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_loopback'};fcnNum=fcnNum+1;
@@ -170,7 +188,7 @@ fcns.thunkname{fcnNum}='int32voidPtrbladerf_moduleuint32Thunk';fcns.name{fcnNum}
 fcns.thunkname{fcnNum}='int32voidPtrbladerf_moduleuint32Thunk';fcns.name{fcnNum}='bladerf_set_frequency'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_module', 'uint32'};fcnNum=fcnNum+1;
 
 % int bladerf_schedule_retune ( struct bladerf * dev , bladerf_module module , uint64_t timestamp , unsigned int frequency , struct bladerf_quick_tune * quick_tune );
-fcns.thunkname{fcnNum}='int32voidPtrbladerf_moduleulonguint32voidPtrThunk';fcns.name{fcnNum}='bladerf_schedule_retune'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_module', 'ulong', 'uint32', 'bladerf_quick_tunePtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}=['int32voidPtrbladerf_module' u64_type 'uint32voidPtrThunk'];fcns.name{fcnNum}='bladerf_schedule_retune'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_module', u64_type, 'uint32', 'bladerf_quick_tunePtr'};fcnNum=fcnNum+1;
 
 % int bladerf_cancel_scheduled_retunes ( struct bladerf * dev , bladerf_module module );
 fcns.thunkname{fcnNum}='int32voidPtrbladerf_moduleThunk';fcns.name{fcnNum}='bladerf_cancel_scheduled_retunes'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_module'};fcnNum=fcnNum+1;
@@ -323,7 +341,7 @@ fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_con
 fcns.thunkname{fcnNum}='int32voidPtruint32Thunk';fcns.name{fcnNum}='bladerf_config_gpio_write'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'uint32'};fcnNum=fcnNum+1;
 
 % int bladerf_get_timestamp ( struct bladerf * dev , bladerf_module mod , uint64_t * value );
-fcns.thunkname{fcnNum}='int32voidPtrbladerf_modulevoidPtrThunk';fcns.name{fcnNum}='bladerf_get_timestamp'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_module', 'ulongPtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrbladerf_modulevoidPtrThunk';fcns.name{fcnNum}='bladerf_get_timestamp'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_module', [u64_type 'Ptr']};fcnNum=fcnNum+1;
 
 % int bladerf_dac_write ( struct bladerf * dev , uint16_t val );
 fcns.thunkname{fcnNum}='int32voidPtruint16Thunk';fcns.name{fcnNum}='bladerf_dac_write'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'uint16'};fcnNum=fcnNum+1;
@@ -359,14 +377,54 @@ fcns.thunkname{fcnNum}='int32cstringbladerf_backenduint8uint8cstringThunk';fcns.
 
 structs.bladerf.members=struct('');
 
-structs.bladerf_devinfo.members=struct('backend', 'bladerf_backend', 'serial', 'int8#33', 'usb_bus', 'uint8', 'usb_addr', 'uint8', 'instance', 'uint32');
-structs.bladerf_rational_rate.members=struct('integer', 'ulong', 'num', 'ulong', 'den', 'ulong');
-structs.bladerf_quick_tune.members=struct('freqsel', 'uint8', 'vcocap', 'uint8', 'nint', 'uint16', 'nfrac', 'uint32', 'flags', 'uint8');
-structs.bladerf_metadata.members=struct('timestamp', 'ulong', 'flags', 'uint32', 'status', 'uint32', 'actual_count', 'uint32', 'reserved', 'uint8#32');
-structs.bladerf_stream.members=struct('');
-structs.bladerf_version.members=struct('major', 'uint16', 'minor', 'uint16', 'patch', 'uint16', 'describe', 'cstring');
-structs.bladerf_image.members=struct('magic', 'int8#8', 'checksum', 'uint8#32', 'version', 'bladerf_version', 'timestamp', 'ulong', 'serial', 'int8#34', 'reserved', 'int8#128', 'type', 'bladerf_image_type', 'address', 'uint32', 'length', 'uint32', 'data', 'uint8Ptr');
-structs.bladerf_lms_dc_cals.members=struct('lpf_tuning', 'int16', 'tx_lpf_i', 'int16', 'tx_lpf_q', 'int16', 'rx_lpf_i', 'int16', 'rx_lpf_q', 'int16', 'dc_ref', 'int16', 'rxvga2a_i', 'int16', 'rxvga2a_q', 'int16', 'rxvga2b_i', 'int16', 'rxvga2b_q', 'int16');
+structs.bladerf_devinfo.members=struct('backend',  'bladerf_backend', ...
+                                       'serial',   'int8#33', ...
+                                       'usb_bus',  'uint8', ...
+                                       'usb_addr', 'uint8', ...
+                                       'instance', 'uint32');
+
+structs.bladerf_rational_rate.members=struct('integer', u64_type, ...
+                                             'num',     u64_type, ...
+                                             'den',     u64_type);
+
+structs.bladerf_quick_tune.members=struct('freqsel', 'uint8', ...
+                                          'vcocap',  'uint8', ...
+                                          'nint',    'uint16', ...
+                                          'nfrac',   'uint32', ...
+                                          'flags', 'uint8');
+
+structs.bladerf_metadata.members=struct('timestamp',     u64_type, ...
+                                        'flags',        'uint32', ...
+                                        'status',       'uint32', ...
+                                        'actual_count', 'uint32', ...
+                                        'reserved',     'uint8#32');
+
+structs.bladerf_version.members=struct('major',    'uint16', ...
+                                       'minor',    'uint16', ...
+                                       'patch',    'uint16', ...
+                                       'describe', 'cstring');
+
+structs.bladerf_image.members=struct('magic',     'int8#8', ...
+                                     'checksum',  'uint8#32', ...
+                                     'version',   'bladerf_version', ...
+                                     'timestamp',  u64_type, ...
+                                     'serial',    'int8#34', ...
+                                     'reserved',  'int8#128', ...
+                                     'type',      'bladerf_image_type', ...
+                                     'address',   'uint32', ...
+                                     'length',    'uint32', ...
+                                     'data',      'uint8Ptr');
+
+structs.bladerf_lms_dc_cals.members=struct('lpf_tuning', 'int16', ...
+                                           'tx_lpf_i',   'int16', ...
+                                           'tx_lpf_q',   'int16', ...
+                                           'rx_lpf_i',   'int16', ...
+                                           'rx_lpf_q',   'int16', ...
+                                           'dc_ref',     'int16', ...
+                                           'rxvga2a_i',  'int16', ...
+                                           'rxvga2a_q',  'int16', ...
+                                           'rxvga2b_i',  'int16', ...
+                                           'rxvga2b_q',  'int16');
 
 % Workaround for MATLAB <= 2015b (64-bit) not identifying the size of the devinfo structure correctly
 structs.bladerf_devinfo.packing=4;
