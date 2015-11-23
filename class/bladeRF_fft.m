@@ -172,6 +172,17 @@ function set_plots(hObject, plots)
    setappdata(root, 'plots', plots);
 end
 
+% Get the frame rate configuration
+function [fps] = get_framerate(hObject)
+   root = get_root_object(hObject);
+   fps = getappdata(root, 'framerate');
+end
+
+% Set the fraem rate configuration
+function set_framerate(hObject, fps)
+   root = get_root_object(hObject);
+   setappdata(root, 'framerate', fps);
+end
 
 function update_plot_axes(hObject, handles)
     plots = get_plots(hObject);
@@ -325,6 +336,10 @@ function bladeRF_fft_OpeningFcn(hObject, ~, handles, varargin)
     % Number of samples we'll read from the device at each iteraion
     setappdata(hObject.Parent, 'num_samples', 4096);
 
+    % Default frame rate
+    setappdata(hObject.Parent, 'framerate', 15);
+    handles.framerate.String = '15';
+
     %  Create plot information for each type of lot
     type_strs = handles.displaytype.String;
 
@@ -375,7 +390,7 @@ function actionbutton_Callback(hObject, ~, handles)
 
             start = cputime;
             update = 1;
-            framerate = 30;
+            framerate = get_framerate(hObject);
 
             num_samples = get_num_samples(hObject);
 
@@ -435,6 +450,7 @@ function actionbutton_Callback(hObject, ~, handles)
                             fft_data(:) = 20*log10(abs(fftshift(fft(samples .* win_norm))));
                             history(:)  = history .* alpha + (1 - alpha) .* fft_data;
                             plots{id}.lines(1).YData(:) = history;
+
                         case 'FFT (linear)'
                             fft_data = abs(fftshift(fft(samples .* win_norm)));
                             history(:)  = history .* alpha + (1 - alpha) .* fft_data;
@@ -456,6 +472,7 @@ function actionbutton_Callback(hObject, ~, handles)
                     tic;
 
                     prev_plot_id = id;
+                    framerate = get_framerate(hObject);
                 else
                     t = toc;
                     update = (t > (1/framerate));
@@ -806,11 +823,30 @@ function print_overruns_Callback(hObject, ~, ~)
     end
 end
 
-function fft_avg_alpha_Callback(hObject, eventdata, handles)
+function fft_avg_alpha_Callback(~, ~, ~)
 end
 
 function fft_avg_alpha_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         hObject.BackgroundColor = 'white';
+    end
+end
+
+function framerate_Callback(hObject, ~, ~)
+    fps = str2num(hObject.String);
+    if isempty(fps) == true
+        fps = get_framerate(hObject);
+    elseif fps < 1
+        fps = 1;
+    end
+
+    fps = round(fps);
+    hObject.String = num2str(fps);
+    set_framerate(hObject, fps);
+end
+
+function framerate_CreateFcn(hObject, ~, ~)
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
     end
 end
