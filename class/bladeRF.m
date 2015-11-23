@@ -83,9 +83,13 @@ classdef bladeRF < handle
     end
 
     properties
-        rx      % Receive chain
-        tx      % Transmit chain
-        vctcxo  % VCTCXO control
+        rx          % Receive chain
+        tx          % Transmit chain
+        vctcxo      % VCTCXO control
+    end
+
+    properties(Dependent)
+        loopback    % Loopback mode. Available options: 'NONE', 'FIRMWARE', 'BB_TXLPF_RXVGA2', 'BB_TXVGA1_RXVGA2', 'BB_TXLPF_RXLPF', 'RF_LNA1', 'RF_LNA2', 'RF_LNA3'
     end
 
     properties(SetAccess=immutable)
@@ -466,6 +470,11 @@ classdef bladeRF < handle
             obj.rx = bladeRF_XCVR(obj, 'RX');
             obj.tx = bladeRF_XCVR(obj, 'TX');
 
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % Default loopback mode
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            obj.loopback = 'NONE';
+
             obj.initialized = true;
         end
 
@@ -764,6 +773,35 @@ classdef bladeRF < handle
                     status = calllib('libbladeRF', 'bladerf_si5338_write', obj.device, addr, val);
                     bladeRF.check_status('bladerf_si5338_write', status);
             end
+        end
+
+        function set.loopback(obj, mode)
+            switch upper(mode)
+                case 'NONE'
+                case 'FIRMWARE'
+                case 'BB_TXLPF_RXVGA2'
+                case 'BB_TXVGA1_RXVGA2'
+                case 'BB_TXLPF_RXLPF'
+                case 'BB_TXVGA1_RXLPF'
+                case 'RF_LNA1'
+                case 'RF_LNA2'
+                case 'RF_LNA3'
+
+                otherwise
+                    error(['Invalid loopback mode: ' mode]);
+            end
+
+            mode_val = [ 'BLADERF_LB_' mode ];
+            status = calllib('libbladeRF', 'bladerf_set_loopback', obj.device, mode_val);
+            bladeRF.check_status('bladerf_set_loopback', status);
+        end
+
+        function mode = get.loopback(obj)
+            mode = 0;
+            [status, ~, mode] = calllib('libbladeRF', 'bladerf_get_loopback', obj.device, mode);
+
+            bladeRF.check_status('bladerf_set_loopback', status);
+            mode = strrep(mode, 'BLADERF_LB_', '');
         end
     end
 end
