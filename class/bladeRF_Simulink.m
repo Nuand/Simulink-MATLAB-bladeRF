@@ -99,6 +99,7 @@ classdef bladeRF_Simulink < matlab.System & ...
         enable_rx           = true;     % Enable Receiver
         enable_overrun      = false;    % Enable Overrun output
         enable_tx           = false;    % Enable Transmitter
+        enable_underrun     = false;    % Enable Underrun output (for future use)
         xb200               = false     % Enable use of XB-200 (must be attached)
     end
 
@@ -179,7 +180,7 @@ classdef bladeRF_Simulink < matlab.System & ...
 
             tx_section_group = matlab.system.display.SectionGroup(...
                 'Title', 'TX Configuration', ...
-                'PropertyList', { 'enable_tx', 'tx_frequency', 'tx_samplerate', 'tx_bandwidth' }, ...
+                'PropertyList', { 'enable_tx', 'enable_underrun', 'tx_frequency', 'tx_samplerate', 'tx_bandwidth' }, ...
                 'Sections', [ tx_gain_section, tx_stream_section ] ...
             );
 
@@ -212,7 +213,7 @@ classdef bladeRF_Simulink < matlab.System & ...
                 count = 0;
             end
 
-            if obj.enable_tx == true
+            if obj.enable_tx == true && obj.enable_underrun == true
                 count = count + 1;
             end
         end
@@ -230,7 +231,7 @@ classdef bladeRF_Simulink < matlab.System & ...
                 n = 1;
             end
 
-            if obj.enable_tx == true
+            if obj.enable_tx == true && obj.enable_underrun == true
                 varargout{n} = 'TX Underrun';
             end
         end
@@ -248,7 +249,7 @@ classdef bladeRF_Simulink < matlab.System & ...
                 n = 1;
             end
 
-            if obj.enable_tx == true
+            if obj.enable_tx == true && obj.enable_underrun == true
                 varargout{n} = 'logical';   % TX Underrun
             end
         end
@@ -266,7 +267,7 @@ classdef bladeRF_Simulink < matlab.System & ...
                 n = 1;
             end
 
-            if obj.enable_tx == true
+            if obj.enable_tx == true && obj.enable_underrun == true
                 varargout{n} = [1 1]; % TX Underrun
             end
         end
@@ -284,7 +285,7 @@ classdef bladeRF_Simulink < matlab.System & ...
                 n = n + 1;
             end
 
-            if obj.enable_tx == true
+            if obj.enable_tx == true && obj.enable_underrun == true
                 varargout{n} = false;   % TX Underrun
             end
         end
@@ -301,7 +302,7 @@ classdef bladeRF_Simulink < matlab.System & ...
             if obj.enable_overrun == true
             end
 
-            if obj.enable_tx == true
+            if obj.enable_tx == true && obj.enable_underrun == true
                 varargout{n} = true;    % TX Underrun
             end
         end
