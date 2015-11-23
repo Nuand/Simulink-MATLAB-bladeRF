@@ -39,11 +39,13 @@ is64_bit = true;
 switch arch
     case 'glnxa64'
         libname   = 'libbladeRF_thunk_glnxa64';
-        bool_type = 'bool';
+        bool_arg  = 'bool';
+        bool_ret  = '_Bool';
         u64_type  = 'ulong';
     case 'win64'
         libname   = 'libbladeRF_thunk_pcwin64';
-        bool_type = 'uint8';
+        bool_arg  = 'uint8';
+        bool_ret  = 'uint8';
         u64_type  = 'uint64';
     otherwise
         error(['Unsupported architecture: ' arch]);
@@ -71,7 +73,7 @@ fcns.thunkname{fcnNum}='int32voidPtrcstringThunk';fcns.name{fcnNum}='bladerf_ope
 fcns.thunkname{fcnNum}='voidvoidPtrThunk';fcns.name{fcnNum}='bladerf_close'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}=[]; fcns.RHS{fcnNum}={'bladerfPtr'};fcnNum=fcnNum+1;
 
 % void bladerf_set_usb_reset_on_open ( _Bool enabled );
-fcns.thunkname{fcnNum}=['void' bool_type 'Thunk'];fcns.name{fcnNum}='bladerf_set_usb_reset_on_open'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}=[]; fcns.RHS{fcnNum}={bool_type};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}=['void' bool_ret 'Thunk'];fcns.name{fcnNum}='bladerf_set_usb_reset_on_open'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}=[]; fcns.RHS{fcnNum}={bool_arg};fcnNum=fcnNum+1;
 
 % void bladerf_init_devinfo ( struct bladerf_devinfo * info );
 fcns.thunkname{fcnNum}='voidvoidPtrThunk';fcns.name{fcnNum}='bladerf_init_devinfo'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}=[]; fcns.RHS{fcnNum}={'bladerf_devinfoPtr'};fcnNum=fcnNum+1;
@@ -83,16 +85,16 @@ fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get
 fcns.thunkname{fcnNum}='int32cstringvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_devinfo_from_str'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'cstring', 'bladerf_devinfoPtr'};fcnNum=fcnNum+1;
 
 % _Bool bladerf_devinfo_matches ( const struct bladerf_devinfo * a , const struct bladerf_devinfo * b );
-fcns.thunkname{fcnNum}=[bool_type 'voidPtrvoidPtrThunk'];fcns.name{fcnNum}='bladerf_devinfo_matches'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}=bool_type; fcns.RHS{fcnNum}={'bladerf_devinfoPtr', 'bladerf_devinfoPtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}=[bool_ret 'voidPtrvoidPtrThunk'];fcns.name{fcnNum}='bladerf_devinfo_matches'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}=bool_arg; fcns.RHS{fcnNum}={'bladerf_devinfoPtr', 'bladerf_devinfoPtr'};fcnNum=fcnNum+1;
 
 % _Bool bladerf_devstr_matches ( const char * dev_str , struct bladerf_devinfo * info );
-fcns.thunkname{fcnNum}=[bool_type 'cstringvoidPtrThunk'];fcns.name{fcnNum}='bladerf_devstr_matches'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}=bool_type; fcns.RHS{fcnNum}={'cstring', 'bladerf_devinfoPtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}=[bool_ret 'cstringvoidPtrThunk'];fcns.name{fcnNum}='bladerf_devstr_matches'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}=bool_arg; fcns.RHS{fcnNum}={'cstring', 'bladerf_devinfoPtr'};fcnNum=fcnNum+1;
 
 % const char * bladerf_backend_str ( bladerf_backend backend );
 fcns.thunkname{fcnNum}='cstringbladerf_backendThunk';fcns.name{fcnNum}='bladerf_backend_str'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='cstring'; fcns.RHS{fcnNum}={'bladerf_backend'};fcnNum=fcnNum+1;
 
 % int bladerf_enable_module ( struct bladerf * dev , bladerf_module m , _Bool enable );
-fcns.thunkname{fcnNum}=['int32voidPtrbladerf_module' bool_type 'Thunk'];fcns.name{fcnNum}='bladerf_enable_module'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_module', bool_type};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}=['int32voidPtrbladerf_module' bool_ret 'Thunk'];fcns.name{fcnNum}='bladerf_enable_module'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_module', bool_arg};fcnNum=fcnNum+1;
 
 % int bladerf_set_loopback ( struct bladerf * dev , bladerf_loopback l );
 fcns.thunkname{fcnNum}='int32voidPtrbladerf_loopbackThunk';fcns.name{fcnNum}='bladerf_set_loopback'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_loopback'};fcnNum=fcnNum+1;
