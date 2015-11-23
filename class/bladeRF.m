@@ -440,11 +440,22 @@ classdef bladeRF < handle
             % Populate information
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-            % Serial number (Needs to be allocated >= 33 bytes)
-            serial = repmat(' ', 1, 33);
-            [status, ~, serial] = calllib('libbladeRF', 'bladerf_get_serial', dptr, serial);
-            bladeRF.check_status('bladerf_get_serial', status);
-            obj.info.serial = serial;
+            % Serial number and backend interface
+            [status, ~, devinfo] = calllib('libbladeRF', 'bladerf_get_devinfo', dptr, []);
+            bladeRF.check_status('bladerf_get_devinfo', status);
+
+            obj.info.serial = char(devinfo.serial);
+
+            switch devinfo.backend
+                case 'BLADERF_BACKEND_LINUX'
+                    obj.info.backend = 'Linux kernel driver';
+                case 'BLADERF_BACKEND_LIBUSB'
+                    obj.info.backend = 'libusb';
+                case 'BLADERF_BACKEND_CYPRESS'
+                    obj.info.backend = 'Cypress CyAPI library & CyUSB driver';
+                otherwise
+                    obj.info.backend = devinfop.Value.backend;
+            end
 
             % FPGA size
             fpga_size = 'BLADERF_FPGA_UNKNOWN';
