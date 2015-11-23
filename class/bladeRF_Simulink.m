@@ -97,6 +97,7 @@ classdef bladeRF_Simulink < matlab.System & ...
 
     properties(Logical, Nontunable)
         enable_rx           = true;     % Enable Receiver
+        enable_overrun      = false;    % Enable Overrun output
         enable_tx           = false;    % Enable Transmitter
         xb200               = false     % Enable use of XB-200 (must be attached)
     end
@@ -162,7 +163,7 @@ classdef bladeRF_Simulink < matlab.System & ...
 
             rx_section_group = matlab.system.display.SectionGroup(...
                 'Title', 'RX Configuration', ...
-                'PropertyList', { 'enable_rx', 'rx_frequency', 'rx_samplerate', 'rx_bandwidth' }, ...
+                'PropertyList', { 'enable_rx', 'enable_overrun', 'rx_frequency', 'rx_samplerate', 'rx_bandwidth' }, ...
                 'Sections', [ rx_gain_section, rx_stream_section ] ...
             );
 
@@ -202,7 +203,11 @@ classdef bladeRF_Simulink < matlab.System & ...
         %% Output setup
         function count = getNumOutputsImpl(obj)
             if obj.enable_rx == true
-                count = 2;
+                if obj.enable_overrun == true
+                    count = 2;
+                else
+                    count = 1;
+                end
             else
                 count = 0;
             end
@@ -215,8 +220,12 @@ classdef bladeRF_Simulink < matlab.System & ...
         function varargout = getOutputNamesImpl(obj)
             if obj.enable_rx == true
                 varargout{1} = 'RX Samples';
-                varargout{2} = 'RX Overrun';
-                n = 3;
+                n = 2;
+
+                if obj.enable_overrun == true
+                    varargout{n} = 'RX Overrun';
+                    n = n + 1;
+                end
             else
                 n = 1;
             end
@@ -229,8 +238,12 @@ classdef bladeRF_Simulink < matlab.System & ...
         function varargout = getOutputDataTypeImpl(obj)
             if obj.enable_rx == true
                 varargout{1} = 'double';    % RX Samples
-                varargout{2} = 'logical';   % RX Overrun
-                n = 3;
+                n = 2;
+
+                if obj.enable_overrun == true
+                    varargout{n} = 'logical';   % RX Overrun
+                    n = n + 1;
+                end
             else
                 n = 1;
             end
@@ -243,24 +256,32 @@ classdef bladeRF_Simulink < matlab.System & ...
         function varargout = getOutputSizeImpl(obj)
             if obj.enable_rx == true
                 varargout{1} = [obj.rx_step_size 1];  % RX Samples
-                varargout{2} = [1 1];                 % RX Overrun
-                n = 3;
+                n = 2;
+
+                if obj.enable_overrun == true
+                    varargout{n} = [1 1]; % RX Overrun
+                    n = n + 1;
+                end
             else
                 n = 1;
             end
 
             if obj.enable_tx == true
-                varargout{n} = [1 1];                 % TX Underrun
+                varargout{n} = [1 1]; % TX Underrun
             end
         end
 
         function varargout = isOutputComplexImpl(obj)
             if obj.enable_rx == true
                 varargout{1} = true;    % RX Samples
-                varargout{2} = false;   % RX Overrun
-                n = 3;
+                n = 2;
             else
                 n = 1;
+            end
+
+            if obj.enable_overrun == true
+                varargout{n} = false;   % RX Overrun
+                n = n + 1;
             end
 
             if obj.enable_tx == true
@@ -275,6 +296,9 @@ classdef bladeRF_Simulink < matlab.System & ...
                 n = 3;
             else
                 n = 1;
+            end
+
+            if obj.enable_overrun == true
             end
 
             if obj.enable_tx == true
