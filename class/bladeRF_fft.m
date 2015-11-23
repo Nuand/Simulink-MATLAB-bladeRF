@@ -379,6 +379,7 @@ function actionbutton_Callback(hObject, ~, handles)
             handles.num_buffers.Enable = 'off';
             handles.num_transfers.Enable = 'off';
             handles.devicelist.Enable = 'off';
+            handles.xb200_attached.Enable = 'off';
 
             handles.bladerf.rx.config.num_buffers = str2num(handles.num_buffers.String);
             handles.bladerf.rx.config.buffer_size = str2num(handles.buffer_size.String);
@@ -493,6 +494,8 @@ function actionbutton_Callback(hObject, ~, handles)
             handles.num_buffers.Enable = 'on';
             handles.num_transfers.Enable = 'on';
             handles.devicelist.Enable = 'on';
+            handles.xb200_attached.Enable = 'on';
+
             hObject.String = 'Start';
             guidata(hObject, handles);
 
@@ -692,7 +695,7 @@ function frequency_Callback(hObject, ~, handles)
     end
 
     val = min(3.8e9, val);
-    val = max(0, val);
+    val = max(handles.bladerf.rx.min_frequency, val);
 
     %fprintf('GUI request to set frequency: %d\n', val);
 
@@ -710,15 +713,39 @@ function frequency_CreateFcn(hObject, ~, ~)
 end
 
 function devicelist_Callback(hObject, ~, handles)
+    if handles.xb200_attached.Value == true
+        xb = 'XB200';
+    else
+        xb = [];
+    end
+
     items = hObject.String;
     index = hObject.Value;
     devstring = items{index};
     handles.bladerf.delete;
     guidata(hObject, handles);
-    handles.bladerf = bladeRF(devstring);
+    handles.bladerf = bladeRF(devstring, [], xb);
     read_device_parameters(hObject, handles);
     guidata(hObject, handles);
 end
+
+function xb200_attached_Callback(hObject, ~, handles)
+    if hObject.Value == true
+        xb = 'XB200';
+    else
+        xb = [];
+    end
+
+    items = handles.devicelist.String;
+    index = handles.devicelist.Value;
+    devstring = items{index};
+    handles.bladerf.delete;
+    guidata(hObject, handles);
+    handles.bladerf = bladeRF(devstring, [], xb);
+    read_device_parameters(hObject, handles);
+    guidata(hObject, handles);
+end
+
 
 function devicelist_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
