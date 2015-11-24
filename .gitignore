@@ -1,7 +1,0 @@
-*.dll
-*.asv
-*.mex*
-*.mdl.*
-slprj/*
-bin/*
-deps/*
